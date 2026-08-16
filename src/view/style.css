@@ -96,6 +96,21 @@ button, input { font-family: inherit; }
 }
 .hits button span { color: var(--mute); float: right; }
 
+/* Rappel des gestes, au premier chargement seulement. */
+.aide {
+  position: fixed; z-index: 4;
+  left: 50%; transform: translateX(-50%);
+  bottom: max(16px, env(safe-area-inset-bottom));
+  padding: 8px 14px; border: 1px solid var(--line); border-radius: 2px;
+  background: rgba(10, 15, 25, .7);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: var(--mute); font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase;
+  pointer-events: none; user-select: none;
+  transition: opacity .8s ease;
+}
+.aide.off { opacity: 0; }
+@media (max-width: 759px) { .aide { display: none; } }
+
 .lbl {
   position: fixed; z-index: 1; transform: translate(-50%, -100%);
   pointer-events: none; user-select: none; white-space: nowrap; text-align: center;

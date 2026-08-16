@@ -289,11 +289,13 @@ let dernier: { x: number; y: number } | null = null;
 let pince = 0;
 let bouge = 0;
 
+const aide = document.getElementById('aide');
 el.addEventListener('pointerdown', (e) => {
   el.setPointerCapture(e.pointerId);
   pointeurs[e.pointerId] = { x: e.clientX, y: e.clientY };
   dernier = { x: e.clientX, y: e.clientY };
   bouge = 0;
+  aide?.classList.add('off');
 });
 el.addEventListener('pointermove', (e) => {
   if (!pointeurs[e.pointerId] || !dernier) return;
