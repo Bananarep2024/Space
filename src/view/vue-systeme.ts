@@ -12,7 +12,8 @@ import * as THREE from 'three';
 import { classeStellaire, typePlanete } from '../core/data';
 import { Rng } from '../core/rng';
 import type { Planete, Systeme } from '../core/types';
-import { textureAnneaux, texturesMonde } from './textures';
+import { materiauEtoiles } from './sprites';
+import { textureAnneaux, textureLune, texturesMonde } from './textures';
 
 /** Rayon a l'ecran : compresse pour qu'une geante n'ecrase pas une lune. */
 function rayonEcran(planete: Planete): number {
@@ -37,6 +38,14 @@ export class VueSysteme {
   private contenu = new THREE.Group();
   private xEtoile = -3;
   private xMax = 10;
+
+  /**
+   * Travaux de texture en attente. Peindre douze mondes d'un coup figerait
+   * l'affichage une seconde ou deux : on pose d'abord des spheres unies, puis
+   * on habille un monde par image. Le systeme apparait instantanement et se
+   * precise sous les yeux.
+   */
+  private aFaire: (() => void)[] = [];
 
   private camX = 0;
   private camZ = 12;
@@ -66,9 +75,7 @@ export class VueSysteme {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(p, 3));
     g.setAttribute('color', new THREE.BufferAttribute(c, 3));
-    this.scene.add(
-      new THREE.Points(g, new THREE.PointsMaterial({ size: 0.9, vertexColors: true, transparent: true, opacity: 0.85 })),
-    );
+    this.scene.add(new THREE.Points(g, materiauEtoiles(1.6, 0.85)));
   }
 
   /** Construit le systeme demande et cadre la vue sur son premier monde. */
@@ -77,6 +84,7 @@ export class VueSysteme {
     this.contenu.clear();
     this.mondes = [];
     this.tournants = [];
+    this.aFaire = [];
 
     const classe = classeStellaire(systeme.classe);
     const rng = new Rng(`${germe}:${systeme.id}:scene`);
@@ -112,18 +120,12 @@ export class VueSysteme {
       groupe.rotation.z = THREE.MathUtils.degToRad(rng.range(0, 32));
       this.contenu.add(groupe);
 
-      const tex = texturesMonde(planete, type, germe, systeme.id);
-      const options: THREE.MeshStandardMaterialParameters = {
-        map: tex.map,
+      const matiere = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(type.couleur).multiplyScalar(0.55),
         roughness: type.rendu.trait === 'oceans' ? 0.55 : 0.95,
         metalness: type.id === 'metallique' ? 0.35 : 0,
-      };
-      if (tex.emissive) {
-        options.emissiveMap = tex.emissive;
-        options.emissive = new THREE.Color(0xffffff);
-        options.emissiveIntensity = 1.1;
-      }
-      const corps = new THREE.Mesh(new THREE.SphereGeometry(rayon, 48, 48), new THREE.MeshStandardMaterial(options));
+      });
+      const corps = new THREE.Mesh(new THREE.SphereGeometry(rayon, 48, 48), matiere);
       corps.userData.orbite = planete.orbite;
       groupe.add(corps);
 
@@ -131,23 +133,45 @@ export class VueSysteme {
       const vitesse = 0.0016 + 0.004 / Math.max(1, planete.jourH / 24);
       this.tournants.push({ obj: corps, v: Math.min(0.009, vitesse) });
 
-      if (tex.nuages) {
-        const ciel = new THREE.Mesh(
-          new THREE.SphereGeometry(rayon * 1.022, 40, 40),
-          new THREE.MeshStandardMaterial({ map: tex.nuages, transparent: true, depthWrite: false, roughness: 1 }),
-        );
-        groupe.add(ciel);
-        this.tournants.push({ obj: ciel, v: Math.min(0.012, vitesse * 1.35) });
-      }
+      this.aFaire.push(() => {
+        const tex = texturesMonde(planete, type, germe, systeme.id);
+        matiere.map = tex.map;
+        matiere.color.setHex(0xffffff);
+        if (tex.normal) {
+          // Le relief n'existe vraiment que sous la lumiere rasante de l'etoile.
+          matiere.normalMap = tex.normal;
+          matiere.normalScale = new THREE.Vector2(0.9, 0.9);
+        }
+        if (tex.emissive) {
+          matiere.emissiveMap = tex.emissive;
+          matiere.emissive = new THREE.Color(0xffffff);
+          matiere.emissiveIntensity = 1.1;
+        }
+        matiere.needsUpdate = true;
+        if (tex.nuages) {
+          const ciel = new THREE.Mesh(
+            new THREE.SphereGeometry(rayon * 1.022, 40, 40),
+            new THREE.MeshStandardMaterial({ map: tex.nuages, transparent: true, depthWrite: false, roughness: 1 }),
+          );
+          groupe.add(ciel);
+          this.tournants.push({ obj: ciel, v: Math.min(0.012, vitesse * 1.35) });
+        }
+      });
 
       if (type.atmosphere !== 'aucune') groupe.add(this.atmosphere(rayon, type.couleur));
       if (planete.anneaux) groupe.add(this.anneaux(rayon, rng));
       for (const [i, lune] of planete.lunes.entries()) {
         const rl = Math.max(0.045, rayon * (0.1 + i * 0.03));
-        const m = new THREE.Mesh(
-          new THREE.SphereGeometry(rl, 20, 20),
-          new THREE.MeshStandardMaterial({ color: i % 2 ? 0x9a9088 : 0xb9b3ab, roughness: 1 }),
-        );
+        const matiereLune = new THREE.MeshStandardMaterial({ color: 0x8b8479, roughness: 1 });
+        this.aFaire.push(() => {
+          const peau = textureLune(new Rng(`${germe}:${systeme.id}:${planete.id}:lune:${i}`));
+          matiereLune.map = peau.map;
+          matiereLune.normalMap = peau.normal;
+          matiereLune.normalScale = new THREE.Vector2(0.8, 0.8);
+          matiereLune.color.setHex(0xffffff);
+          matiereLune.needsUpdate = true;
+        });
+        const m = new THREE.Mesh(new THREE.SphereGeometry(rl, 24, 24), matiereLune);
         const d = rayon * (2.4 + i * 0.7);
         const a = rng.next() * Math.PI * 2;
         m.position.set(Math.cos(a) * d, 0, Math.sin(a) * d);
@@ -323,6 +347,11 @@ export class VueSysteme {
   }
 
   animer(): void {
+    // Un monde habille par image : jamais de gel, et tout est en place en
+    // moins d'une seconde.
+    const travail = this.aFaire.shift();
+    if (travail) travail();
+
     for (const t of this.tournants) {
       if (t.orbite) {
         t.orbite.a += t.orbite.v;

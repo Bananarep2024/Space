@@ -7,8 +7,11 @@
  * elle qui permettra plus tard d'interpoler l'apparence de deux especes
  * croisees plutot que de sculpter un modele par combinaison.
  *
- * Chaque texture est deterministe : elle derive du germe de la galaxie et de
- * l'identifiant du monde. Une planete a donc toujours le meme visage.
+ * Trois mecanismes evitent que deux mondes du meme type se ressemblent :
+ * un relief multi-octaves plutot qu'un seul bruit flou, une palette decalee
+ * par monde selon sa temperature, et un niveau des mers propre a chacun.
+ * Chaque texture reste deterministe — elle derive du germe de la galaxie et
+ * de l'identifiant du monde, donc une planete a toujours le meme visage.
  */
 
 import * as THREE from 'three';
@@ -34,18 +37,76 @@ function melange(a: RVB, b: RVB, t: number): RVB {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
 
-/** Rampe a quatre teintes : la palette du type, etalee sur [0,1]. */
 function rampe(palette: RVB[], n: number): RVB {
   const t = Math.max(0, Math.min(0.9999, n)) * (palette.length - 1);
   const i = Math.floor(t);
   return melange(palette[i], palette[i + 1], t - i);
 }
 
+/* ------------------------------------------------------- variation de teinte */
+
+function versTsl(c: RVB): [number, number, number] {
+  const r = c[0] / 255, v = c[1] / 255, b = c[2] / 255;
+  const max = Math.max(r, v, b), min = Math.min(r, v, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let t: number;
+  if (max === r) t = ((v - b) / d + (v < b ? 6 : 0)) / 6;
+  else if (max === v) t = ((b - r) / d + 2) / 6;
+  else t = ((r - v) / d + 4) / 6;
+  return [t, s, l];
+}
+
+function versRvbDepuisTsl(t: number, s: number, l: number): RVB {
+  if (s === 0) return [l * 255, l * 255, l * 255];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const canal = (d: number) => {
+    if (d < 0) d += 1;
+    if (d > 1) d -= 1;
+    if (d < 1 / 6) return p + (q - p) * 6 * d;
+    if (d < 1 / 2) return q;
+    if (d < 2 / 3) return p + (q - p) * (2 / 3 - d) * 6;
+    return p;
+  };
+  return [canal(t + 1 / 3) * 255, canal(t) * 255, canal(t - 1 / 3) * 255];
+}
+
 /**
- * Champ de bruit : des taches additionnees puis floutees, enroulees en X pour
- * que la texture se referme sans couture sur la sphere.
+ * Decale la palette d'un type pour ce monde precis : un peu de teinte, un peu
+ * de clarte, et un biais chaud ou froid tire de sa temperature de surface.
+ * Deux deserts du meme systeme ne sont plus jumeaux.
  */
-function champ(l: number, h: number, taches: number, rayon: number, rng: Rng): Float32Array {
+function paletteDuMonde(type: TypePlanete, planete: Planete, rng: Rng): RVB[] {
+  const decalTeinte = rng.range(-0.035, 0.035);
+  const decalSat = rng.range(-0.14, 0.16);
+  const decalClarte = rng.range(-0.07, 0.07);
+  // Un monde brulant tire vers l'ocre, un monde glacial vers le bleu.
+  const chaleur = Math.max(-1, Math.min(1, planete.temperatureC / 320));
+  return type.rendu.palette.map((hex) => {
+    const [t, s, l] = versTsl(versRvb(hex));
+    const teinte = (t + decalTeinte - chaleur * 0.018 + 1) % 1;
+    return versRvbDepuisTsl(
+      teinte,
+      Math.max(0, Math.min(1, s + decalSat)),
+      Math.max(0.02, Math.min(0.97, l + decalClarte)),
+    );
+  });
+}
+
+/* --------------------------------------------------------------- relief */
+
+interface Octave {
+  f: Float32Array;
+  l: number;
+  h: number;
+  poids: number;
+}
+
+/** Taches additionnees puis floutees, enroulees en X pour fermer la sphere. */
+function champ(l: number, h: number, taches: number, rayon: number, rng: Rng, flouR: number): Float32Array {
   const f = new Float32Array(l * h);
   for (let b = 0; b < taches; b++) {
     const cx = rng.next() * l;
@@ -62,7 +123,7 @@ function champ(l: number, h: number, taches: number, rayon: number, rng: Rng): F
       }
     }
   }
-  flou(f, l, h, 2, 2);
+  if (flouR > 0) flou(f, l, h, flouR, 1);
   let max = 0;
   for (const v of f) if (v > max) max = v;
   if (max > 0) for (let i = 0; i < f.length; i++) f[i] /= max;
@@ -97,58 +158,104 @@ function lire(f: Float32Array, l: number, h: number, u: number, v: number): numb
   const x1 = (((x0 + 1) % l) + l) % l;
   x0 = ((x0 % l) + l) % l;
   const y1 = Math.min(h - 1, y0c + 1);
-  const a = f[y0c * l + x0];
-  const b = f[y0c * l + x1];
-  const c = f[y1 * l + x0];
-  const d = f[y1 * l + x1];
-  return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty;
+  return (
+    (f[y0c * l + x0] * (1 - tx) + f[y0c * l + x1] * tx) * (1 - ty) +
+    (f[y1 * l + x0] * (1 - tx) + f[y1 * l + x1] * tx) * ty
+  );
+}
+
+/**
+ * Relief multi-octaves. Une seule frequence donne des taches molles ; trois
+ * frequences superposees donnent des cotes decoupees, des massifs et du grain.
+ */
+function relief(L: number, H: number, rng: Rng, echelle: number): Float32Array {
+  const grossieres: Octave[] = [
+    { f: champ(128, 64, Math.round(26 * echelle), 15, rng, 2), l: 128, h: 64, poids: 1 },
+    { f: champ(256, 128, Math.round(120 * echelle), 9, rng, 1), l: 256, h: 128, poids: 0.5 },
+  ];
+  // Les deux dernieres octaves sont du grain : un echantillonnage au plus proche
+  // suffit, et il coute trois fois moins que la bilineaire sur une grande image.
+  const fines: Octave[] = [
+    { f: champ(512, 256, Math.round(520 * echelle), 5, rng, 1), l: 512, h: 256, poids: 0.26 },
+    { f: champ(512, 256, 1400, 2.4, rng, 0), l: 512, h: 256, poids: 0.13 },
+  ];
+  const total = [...grossieres, ...fines].reduce((s, o) => s + o.poids, 0);
+  const out = new Float32Array(L * H);
+  let min = Infinity;
+  let max = -Infinity;
+  for (let y = 0; y < H; y++) {
+    const v = (y + 0.5) / H;
+    for (let x = 0; x < L; x++) {
+      const u = (x + 0.5) / L;
+      let s = 0;
+      for (const o of grossieres) s += lire(o.f, o.l, o.h, u, v) * o.poids;
+      for (const o of fines) {
+        const xi = Math.min(o.l - 1, (u * o.l) | 0);
+        const yi = Math.min(o.h - 1, (v * o.h) | 0);
+        s += o.f[yi * o.l + xi] * o.poids;
+      }
+      s /= total;
+      out[y * L + x] = s;
+      if (s < min) min = s;
+      if (s > max) max = s;
+    }
+  }
+  const etendue = max - min || 1;
+  for (let i = 0; i < out.length; i++) out[i] = (out[i] - min) / etendue;
+  return out;
+}
+
+/**
+ * Carte de normales derivee du relief. C'est elle qui fait exister les
+ * montagnes et les rides sous la lumiere rasante de l'etoile : sans elle, une
+ * planete reste une image collee sur une sphere.
+ */
+function normales(h: Float32Array, L: number, H: number, force: number): THREE.CanvasTexture {
+  const c = toile(L, H);
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(L, H);
+  const d = img.data;
+  for (let y = 0; y < H; y++) {
+    const yh = Math.max(0, y - 1);
+    const yb = Math.min(H - 1, y + 1);
+    for (let x = 0; x < L; x++) {
+      const xg = (x - 1 + L) % L;
+      const xd = (x + 1) % L;
+      const dx = (h[y * L + xd] - h[y * L + xg]) * force;
+      const dy = (h[yb * L + x] - h[yh * L + x]) * force;
+      const nz = 1;
+      const norme = Math.hypot(-dx, -dy, nz);
+      const p = (y * L + x) * 4;
+      d[p] = ((-dx / norme) * 0.5 + 0.5) * 255;
+      d[p + 1] = ((-dy / norme) * 0.5 + 0.5) * 255;
+      d[p + 2] = (nz / norme) * 255;
+      d[p + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.NoColorSpace;
+  return t;
 }
 
 function enTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
   return t;
-}
-
-/** Peint une sphere 2:1 a partir d'un champ et d'une fonction de couleur. */
-function peindre(
-  l: number,
-  h: number,
-  f: Float32Array,
-  fl: number,
-  fh: number,
-  couleur: (n: number, lat: number, u: number, v: number) => RVB,
-): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
-  const c = toile(l, h);
-  const g = c.getContext('2d')!;
-  const img = g.createImageData(l, h);
-  const d = img.data;
-  for (let y = 0; y < h; y++) {
-    const v = y / h;
-    const lat = Math.abs(v - 0.5) * 2;
-    for (let x = 0; x < l; x++) {
-      const col = couleur(lire(f, fl, fh, x / l, v), lat, x / l, v);
-      const p = (y * l + x) * 4;
-      d[p] = col[0];
-      d[p + 1] = col[1];
-      d[p + 2] = col[2];
-      d[p + 3] = 255;
-    }
-  }
-  g.putImageData(img, 0, 0);
-  return { canvas: c, ctx: g };
 }
 
 /* ------------------------------------------------------------ traits */
 
-/** Cratères : le relief des mondes sans atmosphere pour les effacer. */
 function crateres(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): void {
-  // Beaucoup de petits impacts, quelques grands : c'est la distribution reelle,
-  // et c'est aussi ce qui evite l'effet « bulles de savon » d'un liseré trop net.
-  for (let i = 0; i < 260; i++) {
+  // Beaucoup de petits impacts, quelques grands : la distribution reelle. Le
+  // nombre varie fortement — un monde jeune est presque lisse, un monde ancien
+  // est sature.
+  const combien = rng.int(90, 420);
+  for (let i = 0; i < combien; i++) {
     const x = rng.next() * l;
     const y = rng.next() * h;
-    const r = 2 + rng.skewed(1, 20, 3);
+    const r = (l / 512) * (2 + rng.skewed(1, 22, 3));
     const gr = g.createRadialGradient(x - r * 0.25, y - r * 0.25, r * 0.1, x, y, r);
     gr.addColorStop(0, 'rgba(0,0,0,0.34)');
     gr.addColorStop(0.74, 'rgba(0,0,0,0.13)');
@@ -161,24 +268,42 @@ function crateres(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): 
   }
 }
 
-/** Un grand canyon transversal : la signature des mondes erodes. */
 function canyon(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): void {
   g.lineCap = 'round';
-  for (let passe = 0; passe < 2; passe++) {
+  const branches = rng.int(1, 3);
+  for (let b = 0; b < branches; b++) {
+    for (let passe = 0; passe < 2; passe++) {
+      g.beginPath();
+      let y = h * rng.range(0.25, 0.75);
+      g.moveTo(l * 0.05, y);
+      for (let x = l * 0.05; x < l * 0.96; x += l / 40) {
+        y += (rng.next() - 0.5) * h * 0.05;
+        g.lineTo(x, y);
+      }
+      g.strokeStyle = passe === 0 ? 'rgba(40,20,14,0.42)' : 'rgba(18,8,6,0.62)';
+      g.lineWidth = passe === 0 ? h * (0.03 + rng.next() * 0.025) : h * 0.014;
+      g.stroke();
+    }
+  }
+  // Ravines secondaires : le reseau qui alimente le canyon principal.
+  for (let k = 0; k < 60; k++) {
+    let x = rng.next() * l;
+    let y = rng.next() * h;
+    let a = rng.next() * Math.PI * 2;
     g.beginPath();
-    let y = h * (0.35 + rng.next() * 0.3);
-    g.moveTo(l * 0.05, y);
-    for (let x = l * 0.05; x < l * 0.96; x += l / 24) {
-      y += (rng.next() - 0.5) * h * 0.055;
+    g.moveTo(x, y);
+    for (let s = 0; s < 14; s++) {
+      a += (rng.next() - 0.5) * 0.6;
+      x += Math.cos(a) * (l / 110);
+      y += Math.sin(a) * (l / 110);
       g.lineTo(x, y);
     }
-    g.strokeStyle = passe === 0 ? 'rgba(40,20,14,0.5)' : 'rgba(18,8,6,0.7)';
-    g.lineWidth = passe === 0 ? h * 0.045 : h * 0.018;
+    g.strokeStyle = 'rgba(30,16,10,0.22)';
+    g.lineWidth = 0.6 + rng.next() * 1.6;
     g.stroke();
   }
 }
 
-/** Fractures incandescentes, peintes sur un calque d'emission separe. */
 function fractures(l: number, h: number, rng: Rng): HTMLCanvasElement {
   const e = toile(l, h);
   const g = e.getContext('2d')!;
@@ -186,10 +311,17 @@ function fractures(l: number, h: number, rng: Rng): HTMLCanvasElement {
   g.fillRect(0, 0, l, h);
   g.globalCompositeOperation = 'lighter';
   g.lineCap = 'round';
-  for (let k = 0; k < 120; k++) {
+  // Densite, largeur et chaleur du reseau varient par monde : un monde en
+  // debut d'eruption ne ressemble pas a un monde entierement craquele.
+  const densite = rng.int(55, 190);
+  const largeur = rng.range(0.6, 1.9);
+  const chaleur = rng.range(0, 1);
+  const halo = `rgba(${Math.round(150 + chaleur * 90)},${Math.round(38 + chaleur * 40)},8,${(0.22 + rng.next() * 0.16).toFixed(2)})`;
+  const coeur = `rgba(255,${Math.round(140 + chaleur * 80)},${Math.round(40 + chaleur * 70)},0.85)`;
+  for (let k = 0; k < densite; k++) {
     const depart = { x: rng.next() * l, y: rng.next() * h };
     let angle = rng.next() * Math.PI * 2;
-    const segments = 8 + rng.next() * 20;
+    const segments = 6 + rng.next() * (12 + chaleur * 26);
     for (let passe = 0; passe < 2; passe++) {
       g.beginPath();
       g.moveTo(depart.x, depart.y);
@@ -202,8 +334,8 @@ function fractures(l: number, h: number, rng: Rng): HTMLCanvasElement {
         y += Math.sin(a) * (l / 115);
         g.lineTo(x, y);
       }
-      g.strokeStyle = passe === 0 ? 'rgba(190,52,10,0.3)' : 'rgba(255,178,80,0.85)';
-      g.lineWidth = passe === 0 ? l / 95 : l / 460;
+      g.strokeStyle = passe === 0 ? halo : coeur;
+      g.lineWidth = passe === 0 ? (l / 95) * largeur : (l / 460) * largeur;
       g.stroke();
       angle = a;
     }
@@ -211,10 +343,9 @@ function fractures(l: number, h: number, rng: Rng): HTMLCanvasElement {
   return e;
 }
 
-/** Veines claires dans une croute sombre. */
 function veines(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): void {
   g.lineCap = 'round';
-  for (let k = 0; k < 80; k++) {
+  for (let k = 0; k < 120; k++) {
     let x = rng.next() * l;
     let y = rng.next() * h;
     let a = rng.next() * Math.PI * 2;
@@ -226,16 +357,15 @@ function veines(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): vo
       y += Math.sin(a) * (l / 70);
       g.lineTo(x, y);
     }
-    g.strokeStyle = `rgba(200,196,210,${0.08 + rng.next() * 0.14})`;
+    g.strokeStyle = `rgba(200,196,210,${0.06 + rng.next() * 0.13})`;
     g.lineWidth = 0.6 + rng.next() * 2.2;
     g.stroke();
   }
 }
 
-/** Fractures de banquise : lignes claires et depots organiques. */
 function banquise(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): void {
   g.lineCap = 'round';
-  for (let k = 0; k < 85; k++) {
+  for (let k = 0; k < 130; k++) {
     let x = rng.next() * l;
     let y = rng.next() * h;
     let a = rng.next() * Math.PI * 2;
@@ -247,27 +377,30 @@ function banquise(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): 
       y += Math.sin(a) * (l / 64);
       g.lineTo(x, y);
     }
-    g.strokeStyle = rng.next() > 0.4 ? 'rgba(74,120,150,0.4)' : 'rgba(146,102,72,0.32)';
-    g.lineWidth = 0.8 + rng.next() * 3;
+    g.strokeStyle = rng.next() > 0.4 ? 'rgba(74,120,150,0.34)' : 'rgba(146,102,72,0.26)';
+    g.lineWidth = 0.7 + rng.next() * 2.6;
     g.stroke();
   }
 }
 
 /* --------------------------------------------------------- generateurs */
 
-function surfaceGeante(type: TypePlanete, rng: Rng, tempete: boolean): THREE.CanvasTexture {
+function surfaceGeante(type: TypePlanete, planete: Planete, rng: Rng): {
+  map: THREE.CanvasTexture;
+} {
   const L = 1024;
   const H = 512;
   const c = toile(L, H);
   const g = c.getContext('2d')!;
-  const palette = type.rendu.palette.map(versRvb);
+  const palette = paletteDuMonde(type, planete, rng);
+  const tempete = type.id === 'geante_gazeuse' && rng.chance(0.6);
 
-  // Bandes zonales : une pile de gradients horizontaux, comme sur une geante reelle.
   const grad = g.createLinearGradient(0, 0, 0, H);
-  const bandes = 12 + Math.floor(rng.next() * 6);
+  const bandes = 10 + Math.floor(rng.next() * 9);
+  const phase = rng.next() * 6;
   for (let i = 0; i <= bandes; i++) {
     const t = i / bandes;
-    const col = rampe(palette, Math.abs(Math.sin(t * Math.PI * 3.1 + rng.next() * 0.3)));
+    const col = rampe(palette, Math.abs(Math.sin(t * Math.PI * (2.4 + rng.next() * 1.6) + phase)));
     grad.addColorStop(t, `rgb(${col.map(Math.round).join(',')})`);
   }
   g.fillStyle = grad;
@@ -280,103 +413,136 @@ function surfaceGeante(type: TypePlanete, rng: Rng, tempete: boolean): THREE.Can
     g.fillStyle = (n > 0 ? 'rgba(240,248,236,' : 'rgba(16,26,32,') + Math.min(Math.abs(n) * 0.1, 0.11) + ')';
     g.fillRect(0, y, L, 1);
   }
-  if ('filter' in g) g.filter = 'blur(4px)';
-  for (let k = 0; k < 260; k++) {
+  // Volutes : les bandes ne sont pas des rubans lisses, elles s'enroulent.
+  if ('filter' in g) g.filter = 'blur(3px)';
+  for (let k = 0; k < 420; k++) {
     const y = rng.next() * H;
     const lat = Math.abs(y - H / 2) / (H / 2);
-    g.fillStyle = rng.next() > 0.5 ? 'rgba(240,250,238,0.14)' : 'rgba(14,26,32,0.14)';
+    g.fillStyle = rng.next() > 0.5 ? 'rgba(240,250,238,0.13)' : 'rgba(14,26,32,0.13)';
     g.beginPath();
-    g.ellipse(rng.next() * L, y, 25 + rng.next() * 190 * (1 - lat * 0.6), 2 + rng.next() * 5, 0, 0, Math.PI * 2);
+    g.ellipse(rng.next() * L, y, 20 + rng.next() * 200 * (1 - lat * 0.6), 2 + rng.next() * 5,
+      (rng.next() - 0.5) * 0.12, 0, Math.PI * 2);
     g.fill();
   }
   if (tempete) {
     const x = rng.next() * L;
     const y = H * (0.35 + rng.next() * 0.3);
+    const rx = 45 + rng.next() * 45;
     g.fillStyle = 'rgba(196,120,92,0.5)';
     g.beginPath();
-    g.ellipse(x, y, 60, 22, 0, 0, Math.PI * 2);
+    g.ellipse(x, y, rx, rx * 0.36, 0, 0, Math.PI * 2);
     g.fill();
     g.fillStyle = 'rgba(238,196,160,0.45)';
     g.beginPath();
-    g.ellipse(x, y, 31, 11, 0, 0, Math.PI * 2);
+    g.ellipse(x, y, rx * 0.5, rx * 0.18, 0, 0, Math.PI * 2);
     g.fill();
   }
   if ('filter' in g) g.filter = 'none';
-  return enTexture(c);
+  return { map: enTexture(c) };
 }
 
-function surfaceTellurique(type: TypePlanete, rng: Rng, taille: number): {
-  map: THREE.CanvasTexture;
-  emissive?: THREE.CanvasTexture;
-} {
-  const L = taille;
-  const H = taille / 2;
-  const palette = type.rendu.palette.map(versRvb);
+function surfaceTellurique(
+  type: TypePlanete,
+  planete: Planete,
+  rng: Rng,
+  L: number,
+): { map: THREE.CanvasTexture; normal: THREE.CanvasTexture; emissive?: THREE.CanvasTexture } {
+  const H = L / 2;
+  const palette = paletteDuMonde(type, planete, rng);
   const trait = type.rendu.trait;
-  const fl = 224;
-  const fh = 112;
-  const f = champ(fl, fh, 100, 16, rng);
 
+  // L'echelle du relief varie : certains mondes ont de vastes plaques, d'autres
+  // un decoupage serre. C'est ce qui distingue deux mondes de meme type.
+  const h = relief(L, H, rng, rng.range(0.6, 1.5));
+
+  // Niveau des mers propre au monde : un continent unique ou un archipel.
+  const mer = rng.range(0.34, 0.55);
+  const neige = 0.72 + rng.range(-0.06, 0.1);
   const glace: RVB = [226, 238, 244];
-  const sortie = peindre(L, H, f, fl, fh, (n, lat) => {
-    let c: RVB;
-    if (trait === 'continents') {
-      // Ocean, littoral, plaines, reliefs : la lecture classique d'un monde vivant.
-      if (n < 0.42) c = melange(palette[0], palette[1], n / 0.42);
-      else if (n < 0.47) c = melange(palette[1], palette[3], (n - 0.42) / 0.05);
-      else if (n < 0.74) c = melange(palette[2], palette[1], (n - 0.47) / 0.27);
-      else c = melange(palette[2], palette[3], (n - 0.74) / 0.26);
-      if (lat > 0.8) c = melange(c, glace, Math.min(1, (lat - 0.8) / 0.17));
-    } else if (trait === 'oceans') {
-      if (n < 0.62) c = melange(palette[0], palette[1], n / 0.62);
-      else if (n < 0.84) c = melange(palette[1], palette[2], (n - 0.62) / 0.22);
-      else c = melange(palette[2], palette[3], (n - 0.84) / 0.16);
-      if (lat > 0.86) c = melange(c, glace, (lat - 0.86) / 0.14);
-    } else if (trait === 'banquise') {
-      c = rampe(palette, 0.35 + n * 0.65);
-      if (n > 0.7) c = melange(c, [176, 138, 98], ((n - 0.7) / 0.3) * 0.6);
-    } else {
-      c = rampe(palette, n);
-      if (lat > 0.9 && trait === 'canyon') c = melange(c, [214, 208, 202], (lat - 0.9) / 0.1);
-    }
-    return c;
-  });
+  // La calotte polaire recule sur un monde chaud, descend sur un monde froid.
+  const latGlace = Math.max(0.62, Math.min(0.97, 0.86 - planete.temperatureC / 260));
 
-  const g = sortie.ctx;
+  const c = toile(L, H);
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(L, H);
+  const d = img.data;
+
+  for (let y = 0; y < H; y++) {
+    const lat = Math.abs((y + 0.5) / H - 0.5) * 2;
+    for (let x = 0; x < L; x++) {
+      const n = h[y * L + x];
+      let col: RVB;
+      if (trait === 'continents') {
+        if (n < mer) col = melange(palette[0], palette[1], n / mer);
+        else if (n < mer + 0.05) col = melange(palette[1], palette[3], (n - mer) / 0.05);
+        else if (n < neige) col = melange(palette[2], palette[1], (n - mer - 0.05) / (neige - mer - 0.05));
+        else col = melange(palette[2], palette[3], (n - neige) / (1 - neige));
+        if (lat > latGlace) col = melange(col, glace, Math.min(1, (lat - latGlace) / 0.16));
+      } else if (trait === 'oceans') {
+        const merO = mer + 0.18;
+        if (n < merO) col = melange(palette[0], palette[1], n / merO);
+        else if (n < merO + 0.2) col = melange(palette[1], palette[2], (n - merO) / 0.2);
+        else col = melange(palette[2], palette[3], (n - merO - 0.2) / Math.max(0.05, 0.8 - merO));
+        if (lat > latGlace) col = melange(col, glace, Math.min(1, (lat - latGlace) / 0.14));
+      } else if (trait === 'banquise') {
+        col = rampe(palette, 0.3 + n * 0.7);
+        if (n > 0.7) col = melange(col, [176, 138, 98], ((n - 0.7) / 0.3) * 0.55);
+      } else if (trait === 'voile') {
+        // Un monde de serre ne montre pas son sol : on ne voit que la brume.
+        col = rampe(palette, 0.45 + n * 0.5);
+      } else {
+        col = rampe(palette, n);
+        if (lat > 0.9 && trait === 'canyon') col = melange(col, [214, 208, 202], (lat - 0.9) / 0.1);
+      }
+      const p = (y * L + x) * 4;
+      d[p] = col[0];
+      d[p + 1] = col[1];
+      d[p + 2] = col[2];
+      d[p + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+
   if (trait === 'crateres') crateres(g, L, H, rng);
   if (trait === 'canyon') canyon(g, L, H, rng);
   if (trait === 'veines') veines(g, L, H, rng);
   if (trait === 'banquise') banquise(g, L, H, rng);
 
-  const resultat: { map: THREE.CanvasTexture; emissive?: THREE.CanvasTexture } = {
-    map: enTexture(sortie.canvas),
+  // Le relief se ressent plus sur un monde nu que sous une atmosphere epaisse.
+  const forceRelief = trait === 'voile' ? 1.2 : trait === 'oceans' ? 2.4 : trait === 'continents' ? 3.4 : 5;
+  const resultat: { map: THREE.CanvasTexture; normal: THREE.CanvasTexture; emissive?: THREE.CanvasTexture } = {
+    map: enTexture(c),
+    normal: normales(h, L, H, forceRelief * (L / 512)),
   };
+
   if (trait === 'fractures') {
     const e = fractures(L, H, rng);
-    // Les fractures marquent aussi la couleur de base, pas seulement l'emission.
     g.globalCompositeOperation = 'lighter';
     g.drawImage(e, 0, 0);
     g.globalCompositeOperation = 'source-over';
-    resultat.map = enTexture(sortie.canvas);
+    resultat.map = enTexture(c);
     resultat.emissive = enTexture(e);
   }
   return resultat;
 }
 
-/** Couche nuageuse, sur son propre canevas a alpha variable. */
 function nuages(rng: Rng, densite: number): THREE.CanvasTexture {
   const L = 512;
   const H = 256;
-  const f = champ(224, 112, 120, 13, rng);
+  const grand = champ(128, 64, 30, 14, rng, 2);
+  const fin = champ(256, 128, 220, 7, rng, 1);
   const c = toile(L, H);
   const g = c.getContext('2d')!;
   const img = g.createImageData(L, H);
   const d = img.data;
+  const seuil = 0.46 + rng.range(-0.08, 0.12);
   for (let y = 0; y < H; y++) {
     const lat = Math.abs(y / H - 0.5) * 2;
     for (let x = 0; x < L; x++) {
-      const n = lire(f, 224, 112, x / L, y / H);
-      let a = Math.max(0, (n - 0.5) / 0.5);
+      const n = lire(grand, 128, 64, (x + 0.5) / L, (y + 0.5) / H) * 0.72 +
+        lire(fin, 256, 128, (x + 0.5) / L, (y + 0.5) / H) * 0.28;
+      let a = Math.max(0, (n - seuil) / (1 - seuil));
+      // Bandes de convection : nuageux a l'equateur et aux moyennes latitudes.
       a *= 0.55 + 0.45 * Math.sin(lat * Math.PI * 3) * 0.5 + 0.3;
       const p = (y * L + x) * 4;
       d[p] = 255;
@@ -389,7 +555,6 @@ function nuages(rng: Rng, densite: number): THREE.CanvasTexture {
   return enTexture(c);
 }
 
-/** Anneaux : une bande radiale d'opacite, avec ses divisions. */
 export function textureAnneaux(rng: Rng): THREE.CanvasTexture {
   const L = 512;
   const c = toile(L, 1);
@@ -415,16 +580,36 @@ export function textureAnneaux(rng: Rng): THREE.CanvasTexture {
   return t;
 }
 
+/** Surface de lune : petite, criblee, sans atmosphere pour effacer les impacts. */
+export function textureLune(rng: Rng): { map: THREE.CanvasTexture; normal: THREE.CanvasTexture } {
+  const L = 256;
+  const H = 128;
+  const h = relief(L, H, rng, 1.2);
+  const c = toile(L, H);
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(L, H);
+  const d = img.data;
+  const teinte = rng.range(-14, 22);
+  for (let i = 0; i < L * H; i++) {
+    const v = 74 + h[i] * 96;
+    const p = i * 4;
+    d[p] = v + teinte;
+    d[p + 1] = v + teinte * 0.6;
+    d[p + 2] = v;
+    d[p + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  crateres(g, L, H, rng);
+  return { map: enTexture(c), normal: normales(h, L, H, 4) };
+}
+
 export interface TexturesMonde {
   map: THREE.Texture;
+  normal?: THREE.Texture;
   emissive?: THREE.Texture;
   nuages?: THREE.Texture;
 }
 
-/**
- * Textures completes d'un monde. Le germe de la galaxie et l'identite de la
- * planete suffisent a les reproduire : rien n'est stocke, rien n'est telecharge.
- */
 export function texturesMonde(
   planete: Planete,
   type: TypePlanete,
@@ -433,16 +618,14 @@ export function texturesMonde(
 ): TexturesMonde {
   const rng = new Rng(`${germe}:${idSysteme}:${planete.id}:surface`);
 
-  if (type.categorie === 'geante') {
-    return { map: surfaceGeante(type, rng, type.id === 'geante_gazeuse' && rng.chance(0.6)) };
-  }
+  if (type.categorie === 'geante') return surfaceGeante(type, planete, rng);
 
-  const taille = planete.rayonKm > 8000 ? 1024 : 512;
-  const base = surfaceTellurique(type, rng, taille);
-  const resultat: TexturesMonde = { map: base.map };
+  // Les grands mondes meritent plus de definition : on les regarde de plus pres.
+  const L = planete.rayonKm > 9000 ? 768 : 512;
+  const base = surfaceTellurique(type, planete, rng, L);
+  const resultat: TexturesMonde = { map: base.map, normal: base.normal };
   if (base.emissive) resultat.emissive = base.emissive;
 
-  // Des nuages seulement la ou une atmosphere epaisse a un sens.
   const densite =
     type.rendu.trait === 'continents' || type.rendu.trait === 'oceans' ? 1 :
     type.rendu.trait === 'voile' ? 1.6 : 0;

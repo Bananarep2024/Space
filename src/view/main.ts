@@ -21,6 +21,7 @@ import {
   typePlanete,
 } from '../core/index';
 import type { Galaxie, Planete, Systeme } from '../core/types';
+import { materiauEtoiles, pastille } from './sprites';
 import { VueSysteme } from './vue-systeme';
 
 type Mode = 'galaxie' | 'systeme';
@@ -44,6 +45,7 @@ vueSysteme.camera.updateProjectionMatrix();
 {
   const N = 2200;
   const p = new Float32Array(N * 3);
+  const c = new Float32Array(N * 3);
   for (let i = 0; i < N; i++) {
     const r = 400 + Math.random() * 400;
     const th = Math.random() * Math.PI * 2;
@@ -51,27 +53,17 @@ vueSysteme.camera.updateProjectionMatrix();
     p[i * 3] = r * Math.sin(ph) * Math.cos(th);
     p[i * 3 + 1] = r * Math.cos(ph);
     p[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+    const b = 0.4 + Math.random() * 0.5;
+    c[i * 3] = b * 0.86;
+    c[i * 3 + 1] = b * 0.94;
+    c[i * 3 + 2] = b;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(p, 3));
-  sceneGalaxie.add(
-    new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x8ea3b8, size: 1.2, transparent: true, opacity: 0.5 })),
-  );
+  geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  sceneGalaxie.add(new THREE.Points(geo, materiauEtoiles(2.6, 0.55)));
 }
 
-function pastille(): THREE.Texture {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d')!;
-  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gr.addColorStop(0, 'rgba(255,255,255,1)');
-  gr.addColorStop(0.16, 'rgba(255,255,255,0.9)');
-  gr.addColorStop(0.42, 'rgba(255,255,255,0.24)');
-  gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr;
-  g.fillRect(0, 0, 128, 128);
-  return new THREE.CanvasTexture(c);
-}
 const TEXTURE_ETOILE = pastille();
 
 /* ------------------------------------------------------------------ etat */
