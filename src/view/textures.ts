@@ -80,9 +80,12 @@ function versRvbDepuisTsl(t: number, s: number, l: number): RVB {
  * Deux deserts du meme systeme ne sont plus jumeaux.
  */
 function paletteDuMonde(type: TypePlanete, planete: Planete, rng: Rng): RVB[] {
-  const decalTeinte = rng.range(-0.035, 0.035);
-  const decalSat = rng.range(-0.14, 0.16);
-  const decalClarte = rng.range(-0.07, 0.07);
+  const decalTeinte = rng.range(-0.06, 0.06);
+  // Une palette deja saturee ne supporte qu'un leger decalage ; une palette
+  // grise, elle, peut virer franchement au brun, au bleute ou au verdatre.
+  const satMoyenne = type.rendu.palette.reduce((a, hex) => a + versTsl(versRvb(hex))[1], 0) / type.rendu.palette.length;
+  const decalSat = satMoyenne < 0.14 ? rng.range(-0.04, 0.26) : rng.range(-0.16, 0.16);
+  const decalClarte = rng.range(-0.09, 0.09);
   // Un monde brulant tire vers l'ocre, un monde glacial vers le bleu.
   const chaleur = Math.max(-1, Math.min(1, planete.temperatureC / 320));
   return type.rendu.palette.map((hex) => {
@@ -251,6 +254,40 @@ function crateres(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): 
   // Beaucoup de petits impacts, quelques grands : la distribution reelle. Le
   // nombre varie fortement — un monde jeune est presque lisse, un monde ancien
   // est sature.
+  // Quelques grands bassins d'impact, remplis de lave refroidie : ce sont eux
+  // qui donnent a un monde criblé sa physionomie propre.
+  const bassins = rng.int(0, 5);
+  for (let i = 0; i < bassins; i++) {
+    const x = rng.next() * l;
+    const y = rng.next() * h;
+    const r = (l / 512) * rng.range(38, 110);
+    const gr = g.createRadialGradient(x, y, r * 0.2, x, y, r);
+    gr.addColorStop(0, 'rgba(0,0,0,0.38)');
+    gr.addColorStop(0.82, 'rgba(0,0,0,0.2)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  // Un impact recent projette des rayons clairs sur des milliers de kilometres.
+  if (rng.chance(0.35)) {
+    const x = rng.next() * l;
+    const y = rng.next() * h;
+    const rayons = rng.int(8, 22);
+    for (let k = 0; k < rayons; k++) {
+      const a = rng.next() * Math.PI * 2;
+      const long = (l / 512) * rng.range(40, 190);
+      g.strokeStyle = `rgba(255,255,255,${(0.04 + rng.next() * 0.07).toFixed(3)})`;
+      g.lineWidth = 1 + rng.next() * 4;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + Math.cos(a) * long, y + Math.sin(a) * long);
+      g.stroke();
+    }
+  }
+
   const combien = rng.int(90, 420);
   for (let i = 0; i < combien; i++) {
     const x = rng.next() * l;
@@ -270,14 +307,36 @@ function crateres(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): 
 
 function canyon(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): void {
   g.lineCap = 'round';
+
+  // Un desert sur deux n'a pas de canyon mais des champs de dunes : deux
+  // paysages tres differents pour un meme type de monde.
+  if (rng.chance(0.45)) {
+    const pas = h / rng.range(14, 40);
+    const inclinaison = rng.range(-0.5, 0.5);
+    for (let y = -h; y < h * 2; y += pas) {
+      g.strokeStyle = `rgba(${rng.chance(0.5) ? '255,240,220' : '40,22,14'},${(0.04 + rng.next() * 0.08).toFixed(3)})`;
+      g.lineWidth = 1 + rng.next() * 3.5;
+      g.beginPath();
+      let yy = y;
+      g.moveTo(0, yy);
+      for (let x = 0; x <= l; x += l / 50) {
+        yy += inclinaison * (l / 50) / 8 + (rng.next() - 0.5) * 2.4;
+        g.lineTo(x, yy);
+      }
+      g.stroke();
+    }
+    return;
+  }
+
   const branches = rng.int(1, 3);
+  const pente = rng.range(-0.35, 0.35);
   for (let b = 0; b < branches; b++) {
     for (let passe = 0; passe < 2; passe++) {
       g.beginPath();
-      let y = h * rng.range(0.25, 0.75);
+      let y = h * rng.range(0.2, 0.8);
       g.moveTo(l * 0.05, y);
       for (let x = l * 0.05; x < l * 0.96; x += l / 40) {
-        y += (rng.next() - 0.5) * h * 0.05;
+        y += (rng.next() - 0.5) * h * 0.05 + pente * (h / 40);
         g.lineTo(x, y);
       }
       g.strokeStyle = passe === 0 ? 'rgba(40,20,14,0.42)' : 'rgba(18,8,6,0.62)';
@@ -385,60 +444,198 @@ function banquise(g: CanvasRenderingContext2D, l: number, h: number, rng: Rng): 
 
 /* --------------------------------------------------------- generateurs */
 
-function surfaceGeante(type: TypePlanete, planete: Planete, rng: Rng): {
-  map: THREE.CanvasTexture;
-} {
+/**
+ * Palette d'une geante : une famille de teintes tiree parmi celles declarees
+ * pour son type, puis six paliers de clarte. Une geante n'a aucune raison
+ * d'etre toujours ocre — selon sa chimie et sa temperature elle peut etre
+ * turquoise, violine, sulfureuse ou presque blanche.
+ */
+function paletteGeante(type: TypePlanete, planete: Planete, rng: Rng): RVB[] {
+  const familles = type.rendu.teintes ?? [[20, 50]];
+  const [hMin, hMax] = rng.pick(familles);
+  const teinte = (rng.range(hMin, hMax) / 360 + 1) % 1;
+  // Une geante glacee est pale et peu saturee, une geante chaude est dense.
+  const froide = planete.temperatureC < -120;
+  const satBase = froide ? rng.range(0.1, 0.34) : rng.range(0.16, 0.52);
+  const clarteBase = froide ? rng.range(0.4, 0.64) : rng.range(0.24, 0.5);
+  // Ecart large entre bande sombre et bande claire : c'est ce qui donne du
+  // relief a l'atmosphere plutot qu'un degrade pastel.
+  const amplitude = rng.range(0.3, 0.66);
+  const derive = rng.range(-0.06, 0.06);
+
+  const stops: RVB[] = [];
+  for (let i = 0; i < 6; i++) {
+    const t = i / 5;
+    stops.push(
+      versRvbDepuisTsl(
+        (teinte + derive * t + 1) % 1,
+        // Les bandes sombres portent la couleur, les zones claires sont des
+        // nuages d'ammoniac presque blancs : c'est ainsi qu'elles se lisent.
+        Math.max(0.02, Math.min(1, satBase * (1.45 - t * 1.05))),
+        Math.max(0.04, Math.min(0.97, clarteBase - amplitude / 2 + amplitude * t)),
+      ),
+    );
+  }
+  return stops;
+}
+
+/** Profil de bandes en latitude : une somme de sinusoides, jamais deux fois la meme. */
+function profilBandes(H: number, rng: Rng, composantes: number, nettete: number): Float32Array {
+  const freqs: number[] = [];
+  const phases: number[] = [];
+  const amps: number[] = [];
+  for (let i = 0; i < composantes; i++) {
+    freqs.push(rng.range(1.2, 3 + i * 4));
+    phases.push(rng.next() * Math.PI * 2);
+    amps.push(1 / (1 + i * 0.8));
+  }
+  const total = amps.reduce((a, b) => a + b, 0);
+  const p = new Float32Array(H);
+  for (let y = 0; y < H; y++) {
+    const v = y / H;
+    let s = 0;
+    for (let i = 0; i < composantes; i++) s += Math.sin(v * Math.PI * freqs[i] * 2 + phases[i]) * amps[i];
+    s = s / total * 0.5 + 0.5;
+    // La nettete durcit ou adoucit la transition entre deux bandes.
+    p[y] = nettete === 1 ? s : Math.max(0, Math.min(1, (s - 0.5) * nettete + 0.5));
+  }
+  return p;
+}
+
+type MotifGeante = 'bandes' | 'turbulent' | 'tempetes' | 'rayures' | 'polaire' | 'voile';
+
+function surfaceGeante(type: TypePlanete, planete: Planete, rng: Rng): { map: THREE.CanvasTexture; normal: THREE.CanvasTexture } {
   const L = 1024;
   const H = 512;
   const c = toile(L, H);
   const g = c.getContext('2d')!;
-  const palette = paletteDuMonde(type, planete, rng);
-  const tempete = type.id === 'geante_gazeuse' && rng.chance(0.6);
+  const palette = paletteGeante(type, planete, rng);
 
-  const grad = g.createLinearGradient(0, 0, 0, H);
-  const bandes = 10 + Math.floor(rng.next() * 9);
-  const phase = rng.next() * 6;
-  for (let i = 0; i <= bandes; i++) {
-    const t = i / bandes;
-    const col = rampe(palette, Math.abs(Math.sin(t * Math.PI * (2.4 + rng.next() * 1.6) + phase)));
-    grad.addColorStop(t, `rgb(${col.map(Math.round).join(',')})`);
-  }
-  g.fillStyle = grad;
-  g.fillRect(0, 0, L, H);
+  const poids = type.rendu.motifs ?? { bandes: 1 };
+  const motifs = Object.keys(poids) as MotifGeante[];
+  const motif = rng.weighted(motifs, (m) => poids[m]);
 
+  // Chaque motif est un climat : nombre de bandes, nettete, ampleur des
+  // tourbillons et nombre de tempetes en decoulent.
+  const reglages: Record<
+    MotifGeante,
+    { composantes: number; nettete: number; warp: number; tempetes: [number, number]; grain: number; paliers: number }
+  > = {
+    bandes: { composantes: rng.int(5, 9), nettete: 2.2, warp: 0.022, tempetes: [1, 4], grain: 0.5, paliers: 0 },
+    turbulent: { composantes: rng.int(3, 6), nettete: 1.5, warp: 0.16, tempetes: [4, 11], grain: 1, paliers: 0 },
+    tempetes: { composantes: rng.int(2, 5), nettete: 1.6, warp: 0.08, tempetes: [10, 26], grain: 0.8, paliers: 0 },
+    rayures: { composantes: rng.int(9, 14), nettete: 4.5, warp: 0.014, tempetes: [0, 3], grain: 0.3, paliers: rng.int(7, 14) },
+    polaire: { composantes: rng.int(3, 6), nettete: 2.6, warp: 0.035, tempetes: [1, 5], grain: 0.45, paliers: 0 },
+    voile: { composantes: rng.int(1, 3), nettete: 0.7, warp: 0.06, tempetes: [0, 2], grain: 0.25, paliers: 0 },
+  };
+  const r = reglages[motif];
+
+  // Deformation du domaine : c'est elle qui donne l'aspect marbre plutot que
+  // des rubans peints au pinceau plat.
+  const warp = champ(128, 64, 40, 13, rng, 2);
+  const grain = champ(256, 128, 300, 6, rng, 1);
+  const SUR = 4;
+  const profil = profilBandes(H * SUR, rng, r.composantes, r.nettete);
+
+  const img = g.createImageData(L, H);
+  const d = img.data;
+  const altitude = new Float32Array(L * H);
   for (let y = 0; y < H; y++) {
-    const n =
-      Math.sin(y * 0.31) * 0.5 + Math.sin(y * 0.09 + 1.4) * 0.35 +
-      Math.sin(y * 0.83 + 3.1) * 0.15 + (rng.next() - 0.5) * 0.45;
-    g.fillStyle = (n > 0 ? 'rgba(240,248,236,' : 'rgba(16,26,32,') + Math.min(Math.abs(n) * 0.1, 0.11) + ')';
-    g.fillRect(0, y, L, 1);
+    const v = (y + 0.5) / H;
+    const lat = Math.abs(v - 0.5) * 2;
+    for (let x = 0; x < L; x++) {
+      const u = (x + 0.5) / L;
+      const decalage = (lire(warp, 128, 64, u, v) - 0.5) * r.warp;
+      const iy = Math.max(0, Math.min(H * SUR - 1, Math.round((v + decalage) * H * SUR)));
+      let n = profil[iy];
+      n += (lire(grain, 256, 128, u, v) - 0.5) * 0.16 * r.grain;
+      n = Math.max(0, Math.min(1, n));
+      // Rayures : des paliers francs plutot qu'un degrade continu.
+      if (r.paliers) n = Math.round(n * r.paliers) / r.paliers;
+      altitude[y * L + x] = n;
+      let col = rampe(palette, n);
+      // Assombrissement polaire : les poles d'une geante sont toujours plus sombres.
+      if (motif === 'polaire' && lat > 0.72) {
+        col = melange(col, palette[0], Math.min(1, (lat - 0.72) / 0.28) * 0.85);
+      } else if (lat > 0.86) {
+        col = melange(col, palette[1], (lat - 0.86) / 0.14 * 0.4);
+      }
+      const p = (y * L + x) * 4;
+      d[p] = col[0];
+      d[p + 1] = col[1];
+      d[p + 2] = col[2];
+      d[p + 3] = 255;
+    }
   }
-  // Volutes : les bandes ne sont pas des rubans lisses, elles s'enroulent.
+  g.putImageData(img, 0, 0);
+
+  // Fines striations : le detail qui apparait quand on s'approche.
+  g.globalAlpha = 0.5;
+  for (let k = 0; k < 260; k++) {
+    const y = rng.next() * H;
+    const clair = rng.chance(0.5);
+    const t = clair ? palette[5] : palette[0];
+    g.strokeStyle = `rgba(${t.map(Math.round).join(',')},${(0.05 + rng.next() * 0.14).toFixed(2)})`;
+    g.lineWidth = 0.6 + rng.next() * 2.2;
+    g.beginPath();
+    const x0 = rng.next() * L;
+    g.moveTo(x0, y);
+    let yy = y;
+    for (let x = x0; x < x0 + L * rng.range(0.15, 0.7); x += L / 60) {
+      yy += (rng.next() - 0.5) * 2.6;
+      g.lineTo(x % L === x ? x : x, yy);
+    }
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+
+  // Volutes etirees le long des bandes.
   if ('filter' in g) g.filter = 'blur(3px)';
-  for (let k = 0; k < 420; k++) {
+  const volutes = Math.round(120 + r.grain * 420);
+  for (let k = 0; k < volutes; k++) {
     const y = rng.next() * H;
     const lat = Math.abs(y - H / 2) / (H / 2);
-    g.fillStyle = rng.next() > 0.5 ? 'rgba(240,250,238,0.13)' : 'rgba(14,26,32,0.13)';
+    const clair = rng.next() > 0.5;
+    const teinte = clair ? palette[5] : palette[0];
+    g.fillStyle = `rgba(${teinte.map(Math.round).join(',')},${(0.07 + rng.next() * 0.1).toFixed(2)})`;
     g.beginPath();
-    g.ellipse(rng.next() * L, y, 20 + rng.next() * 200 * (1 - lat * 0.6), 2 + rng.next() * 5,
-      (rng.next() - 0.5) * 0.12, 0, Math.PI * 2);
-    g.fill();
-  }
-  if (tempete) {
-    const x = rng.next() * L;
-    const y = H * (0.35 + rng.next() * 0.3);
-    const rx = 45 + rng.next() * 45;
-    g.fillStyle = 'rgba(196,120,92,0.5)';
-    g.beginPath();
-    g.ellipse(x, y, rx, rx * 0.36, 0, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = 'rgba(238,196,160,0.45)';
-    g.beginPath();
-    g.ellipse(x, y, rx * 0.5, rx * 0.18, 0, 0, Math.PI * 2);
+    g.ellipse(rng.next() * L, y, 18 + rng.next() * 220 * (1 - lat * 0.6) * (0.4 + r.warp * 5),
+      1.5 + rng.next() * 6, (rng.next() - 0.5) * 0.14, 0, Math.PI * 2);
     g.fill();
   }
   if ('filter' in g) g.filter = 'none';
-  return { map: enTexture(c) };
+
+  // Tempetes : des ovales a contre-teinte, parfois un oeil geant.
+  const nbTempetes = rng.int(r.tempetes[0], r.tempetes[1]);
+  for (let k = 0; k < nbTempetes; k++) {
+    const x = rng.next() * L;
+    const y = H * rng.range(0.18, 0.82);
+    const rx = (12 + rng.skewed(4, 90, 2)) * (motif === 'tempetes' ? 0.7 : 1);
+    const ry = rx * rng.range(0.3, 0.55);
+    const chaud = rng.chance(0.5);
+    const noyau = chaud ? palette[5] : palette[0];
+    const bord = chaud ? palette[3] : palette[1];
+    if ('filter' in g) g.filter = 'blur(2px)';
+    // Bourrelet exterieur, puis oeil : une tempete se lit a son anneau.
+    g.strokeStyle = `rgba(${palette[0].map(Math.round).join(',')},0.4)`;
+    g.lineWidth = rx * 0.14;
+    g.beginPath();
+    g.ellipse(x, y, rx * 1.05, ry * 1.05, 0, 0, Math.PI * 2);
+    g.stroke();
+    g.fillStyle = `rgba(${bord.map(Math.round).join(',')},0.72)`;
+    g.beginPath();
+    g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = `rgba(${noyau.map(Math.round).join(',')},0.8)`;
+    g.beginPath();
+    g.ellipse(x, y, rx * 0.5, ry * 0.5, 0, 0, Math.PI * 2);
+    g.fill();
+    if ('filter' in g) g.filter = 'none';
+  }
+
+  // Un relief tres doux sur les sommets nuageux : assez pour que les bandes
+  // accrochent la lumiere, jamais assez pour ressembler a du rocher.
+  return { map: enTexture(c), normal: normales(altitude, L, H, 1.6) };
 }
 
 function surfaceTellurique(
@@ -555,12 +752,20 @@ function nuages(rng: Rng, densite: number): THREE.CanvasTexture {
   return enTexture(c);
 }
 
-export function textureAnneaux(rng: Rng): THREE.CanvasTexture {
+/**
+ * Anneaux. Leur teinte dit de quoi ils sont faits : glace brillante autour d'un
+ * monde froid, poussiere rocheuse sombre autour d'un monde chaud.
+ */
+export function textureAnneaux(rng: Rng, temperatureC = -120): THREE.CanvasTexture {
   const L = 512;
   const c = toile(L, 1);
   const g = c.getContext('2d')!;
   const img = g.createImageData(L, 1);
   const d = img.data;
+  const glace = temperatureC < -60;
+  const base: RVB = glace
+    ? [206 + rng.range(-14, 14), 216 + rng.range(-10, 10), 222 + rng.range(-6, 12)]
+    : [172 + rng.range(-30, 24), 148 + rng.range(-28, 20), 126 + rng.range(-26, 18)];
   for (let x = 0; x < L; x++) {
     const u = x / L;
     let a = u < 0.2 ? 0.28 + u * 1.1 : u < 0.58 ? 0.9 : u < 0.84 ? 0.66 : 0.3;
@@ -569,9 +774,9 @@ export function textureAnneaux(rng: Rng): THREE.CanvasTexture {
     a = Math.max(0, Math.min(1, a * (0.8 + s * 0.2 + (rng.next() - 0.5) * 0.08)));
     const b = 0.84 + s * 0.16;
     const p = x * 4;
-    d[p] = 206 * b;
-    d[p + 1] = 216 * b;
-    d[p + 2] = 222 * b;
+    d[p] = base[0] * b;
+    d[p + 1] = base[1] * b;
+    d[p + 2] = base[2] * b;
     d[p + 3] = a * 255;
   }
   g.putImageData(img, 0, 0);

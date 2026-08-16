@@ -534,11 +534,6 @@
         "ceintures de radiations"
       ],
       "vie": 0.03,
-      "lunes": [
-        0,
-        6
-      ],
-      "anneaux": 0.45,
       "note": "La pompe a carburant d'un systeme. Ses lunes en font aussi le meilleur verrou militaire.",
       "rendu": {
         "palette": [
@@ -547,7 +542,41 @@
           "#7FA8A0",
           "#D3D9C4"
         ],
-        "trait": "bandes"
+        "trait": "bandes",
+        "teintes": [
+          [
+            18,
+            44
+          ],
+          [
+            38,
+            62
+          ],
+          [
+            344,
+            378
+          ],
+          [
+            172,
+            205
+          ],
+          [
+            4,
+            22
+          ],
+          [
+            268,
+            300
+          ]
+        ],
+        "motifs": {
+          "bandes": 30,
+          "turbulent": 22,
+          "tempetes": 16,
+          "rayures": 14,
+          "polaire": 10,
+          "voile": 8
+        }
       }
     },
     {
@@ -576,11 +605,6 @@
         "vents supersoniques"
       ],
       "vie": 0.02,
-      "lunes": [
-        0,
-        5
-      ],
-      "anneaux": 0.3,
       "rendu": {
         "palette": [
           "#1C2E44",
@@ -588,7 +612,37 @@
           "#6C93B8",
           "#BFD8E8"
         ],
-        "trait": "bandes"
+        "trait": "bandes",
+        "teintes": [
+          [
+            178,
+            218
+          ],
+          [
+            196,
+            232
+          ],
+          [
+            150,
+            182
+          ],
+          [
+            228,
+            258
+          ],
+          [
+            30,
+            52
+          ]
+        ],
+        "motifs": {
+          "voile": 34,
+          "bandes": 22,
+          "turbulent": 18,
+          "polaire": 14,
+          "tempetes": 7,
+          "rayures": 5
+        }
       }
     }
   ]

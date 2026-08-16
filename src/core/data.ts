@@ -53,8 +53,6 @@ export interface TypePlanete {
   ressources: Record<string, number>;
   dangers: string[];
   vie: number;
-  lunes?: [number, number];
-  anneaux?: number;
   habitable?: boolean;
   rarete?: number;
   note?: string;
@@ -62,6 +60,10 @@ export interface TypePlanete {
   rendu: {
     palette: string[];
     trait: 'fractures' | 'crateres' | 'canyon' | 'voile' | 'veines' | 'continents' | 'oceans' | 'banquise' | 'bandes';
+    /** Geantes : familles de teintes possibles, en degres. */
+    teintes?: [number, number][];
+    /** Geantes : poids des motifs atmospheriques. */
+    motifs?: Record<string, number>;
   };
 }
 

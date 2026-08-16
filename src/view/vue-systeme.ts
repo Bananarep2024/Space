@@ -139,8 +139,10 @@ export class VueSysteme {
         matiere.color.setHex(0xffffff);
         if (tex.normal) {
           // Le relief n'existe vraiment que sous la lumiere rasante de l'etoile.
+          // Une atmosphere ne se creuse pas comme une roche : on l'attenue.
+          const force = type.categorie === 'geante' ? 0.35 : 0.9;
           matiere.normalMap = tex.normal;
-          matiere.normalScale = new THREE.Vector2(0.9, 0.9);
+          matiere.normalScale = new THREE.Vector2(force, force);
         }
         if (tex.emissive) {
           matiere.emissiveMap = tex.emissive;
@@ -159,9 +161,9 @@ export class VueSysteme {
       });
 
       if (type.atmosphere !== 'aucune') groupe.add(this.atmosphere(rayon, type.couleur));
-      if (planete.anneaux) groupe.add(this.anneaux(rayon, rng));
+      if (planete.anneaux) groupe.add(this.anneaux(rayon, rng, planete));
       for (const [i, lune] of planete.lunes.entries()) {
-        const rl = Math.max(0.045, rayon * (0.1 + i * 0.03));
+        const rl = Math.max(0.035, rayon * Math.min(0.3, lune.rayonKm / planete.rayonKm));
         const matiereLune = new THREE.MeshStandardMaterial({ color: 0x8b8479, roughness: 1 });
         this.aFaire.push(() => {
           const peau = textureLune(new Rng(`${germe}:${systeme.id}:${planete.id}:lune:${i}`));
@@ -172,7 +174,7 @@ export class VueSysteme {
           matiereLune.needsUpdate = true;
         });
         const m = new THREE.Mesh(new THREE.SphereGeometry(rl, 24, 24), matiereLune);
-        const d = rayon * (2.4 + i * 0.7);
+        const d = rayon * (2.2 + i * 0.65) + rl * 2;
         const a = rng.next() * Math.PI * 2;
         m.position.set(Math.cos(a) * d, 0, Math.sin(a) * d);
         groupe.add(m);
@@ -244,7 +246,7 @@ export class VueSysteme {
     );
   }
 
-  private anneaux(rayon: number, rng: Rng): THREE.Mesh {
+  private anneaux(rayon: number, rng: Rng, planete: Planete): THREE.Mesh {
     const interne = rayon * 1.35;
     const externe = rayon * 2.25;
     const geo = new THREE.RingGeometry(interne, externe, 180, 3);
@@ -258,7 +260,8 @@ export class VueSysteme {
     const anneau = new THREE.Mesh(
       geo,
       new THREE.MeshStandardMaterial({
-        map: textureAnneaux(rng), side: THREE.DoubleSide, transparent: true, depthWrite: false, roughness: 1,
+        map: textureAnneaux(rng, planete.temperatureC), side: THREE.DoubleSide,
+        transparent: true, depthWrite: false, roughness: 1,
       }),
     );
     anneau.rotation.x = -Math.PI / 2.06;

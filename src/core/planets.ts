@@ -146,19 +146,30 @@ function vieDe(rng: Rng, type: TypePlanete, nommeur: Nommeur): FormeDeVie | null
   };
 }
 
-function lunesDe(rng: Rng, type: TypePlanete, nommeur: Nommeur): Lune[] {
-  if (!type.lunes) return [];
-  const [min, max] = type.lunes;
-  const n = rng.int(min, max);
+/**
+ * Cortege de lunes. Ce n'est pas l'apanage des geantes : un monde tellurique
+ * massif en capture aussi, et une petite lune tourne parfois autour d'un monde
+ * modeste. Ce qui compte est la masse, pas la categorie.
+ */
+function lunesDe(rng: Rng, type: TypePlanete, rayonKm: number, nommeur: Nommeur): Lune[] {
+  let n: number;
+  if (type.categorie === 'geante') n = rng.weighted([0, 1, 2, 3, 4, 5, 6], (k) => [8, 16, 22, 20, 15, 11, 8][k]);
+  else if (rayonKm > 11000) n = rng.weighted([0, 1, 2, 3], (k) => [30, 34, 22, 14][k]);
+  else if (rayonKm > 7000) n = rng.weighted([0, 1, 2], (k) => [48, 36, 16][k]);
+  else if (rayonKm > 3500) n = rng.weighted([0, 1], (k) => [72, 28][k]);
+  else n = rng.chance(0.08) ? 1 : 0;
+
   const lunes: Lune[] = [];
   for (let i = 0; i < n; i++) {
+    // Une lune ne depasse jamais le tiers de son monde : au-dela c'est un couple.
+    const rayonLune = Math.round(Math.min(rayonKm * 0.34, rng.skewed(120, 3400, 1.5)));
     lunes.push({
       nom: nommeur.propre(),
-      rayonKm: Math.round(rng.range(400, 3200)),
+      rayonKm: rayonLune,
       gisements: [
         {
           ressource: rng.weighted(['fer_nickel', 'eau', 'regolithe', 'silice', 'helium3'], (id) =>
-            id === 'helium3' ? 2 : 6,
+            id === 'helium3' ? (type.categorie === 'geante' ? 4 : 1) : 6,
           ),
           richesse: Math.round(rng.skewed(10, 85, 1.6)),
           acces: rng.int(1, 3),
@@ -167,6 +178,18 @@ function lunesDe(rng: Rng, type: TypePlanete, nommeur: Nommeur): Lune[] {
     });
   }
   return lunes;
+}
+
+/**
+ * Anneaux. Frequents autour des geantes, rares mais bien reels ailleurs : il
+ * suffit d'une lune brisee ou d'un corps disloque par la maree pour en laisser
+ * un autour d'un monde rocheux.
+ */
+function anneauxDe(rng: Rng, type: TypePlanete, rayonKm: number, graviteG: number): boolean {
+  if (type.categorie === 'geante') return rng.chance(0.42);
+  if (type.id === 'volcanique' || type.id === 'irradie') return rng.chance(0.05);
+  const p = rayonKm > 9000 ? 0.045 : rayonKm > 5000 ? 0.025 : 0.012;
+  return rng.chance(p * (graviteG > 1.2 ? 1.6 : 1));
 }
 
 export function genererPlanetes(
@@ -237,8 +260,8 @@ export function genererPlanetes(
       habitabilite,
       habitable,
       gisements,
-      lunes: lunesDe(rng, type, nommeur),
-      anneaux: type.anneaux ? rng.chance(type.anneaux) : false,
+      lunes: lunesDe(rng, type, rayonKm, nommeur),
+      anneaux: anneauxDe(rng, type, rayonKm, gravite),
       dangers: [...type.dangers],
       vie,
       artefact: rng.chance(vie && vie.palier >= 3 ? 0.05 : 0.015),
