@@ -1,0 +1,75 @@
+{
+  "$commentaire": "Classes stellaires. poids = frequence de tirage. luminosite en luminosites solaires, elle determine la zone habitable. planetes = plage du nombre de planetes (toujours au moins 1).",
+  "classes": [
+    {
+      "id": "M",
+      "nom": "naine rouge",
+      "couleur": "#ff9066",
+      "taille": 1.5,
+      "poids": 0.50,
+      "luminosite": 0.04,
+      "planetes": [1, 9],
+      "note": "Zone habitable tres proche : les mondes temperes y sont en rotation synchrone."
+    },
+    {
+      "id": "K",
+      "nom": "naine orange",
+      "couleur": "#ffc078",
+      "taille": 2.1,
+      "poids": 0.19,
+      "luminosite": 0.32,
+      "planetes": [2, 12],
+      "note": "Le meilleur compromis : stable, longue duree de vie, zone habitable large."
+    },
+    {
+      "id": "G",
+      "nom": "etoile jaune",
+      "couleur": "#fff2d6",
+      "taille": 2.5,
+      "poids": 0.11,
+      "luminosite": 1.0,
+      "planetes": [2, 12]
+    },
+    {
+      "id": "F",
+      "nom": "etoile blanc-jaune",
+      "couleur": "#f2f4ff",
+      "taille": 2.9,
+      "poids": 0.06,
+      "luminosite": 3.2,
+      "planetes": [1, 10]
+    },
+    {
+      "id": "A",
+      "nom": "etoile blanche",
+      "couleur": "#cfe0ff",
+      "taille": 3.4,
+      "poids": 0.025,
+      "luminosite": 18.0,
+      "planetes": [1, 7],
+      "note": "Rayonnement ultraviolet intense : sterilise les mondes internes."
+    },
+    {
+      "id": "DA",
+      "nom": "naine blanche",
+      "couleur": "#dff0ff",
+      "taille": 1.2,
+      "poids": 0.075,
+      "luminosite": 0.005,
+      "planetes": [1, 4],
+      "kaerium": 6.0,
+      "note": "Vestige d'une etoile morte. Les debris de son effondrement concentrent les isotopes superlourds."
+    },
+    {
+      "id": "BIN",
+      "nom": "binaire serree",
+      "couleur": "#ffd9a8",
+      "taille": 2.6,
+      "poids": 0.04,
+      "luminosite": 1.6,
+      "planetes": [1, 9],
+      "habitabilite": -20,
+      "note": "Orbites instables : les mondes y subissent des saisons chaotiques."
+    }
+  ]
+}

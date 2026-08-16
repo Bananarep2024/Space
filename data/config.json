@@ -1,0 +1,46 @@
+{
+  "$commentaire": "Constantes de partie. Toutes les durees sont en secondes de temps de jeu a la vitesse x1.",
+  "partie": {
+    "duree_cible_min": 150,
+    "joueurs_max": 6,
+    "vitesses": [1, 2, 5]
+  },
+  "carte": {
+    "tailles": { "petite": 150, "standard": 300, "grande": 600 },
+    "defaut": "standard",
+    "rayon_al": 72,
+    "epaisseur_al": 14,
+    "distance_min_al": 3.0,
+    "portee_saut_al": 14,
+    "portee_saut_max_al": 28,
+    "nebuleuses": [2, 4],
+    "rayon_nebuleuse_al": [8, 16],
+    "trous_de_ver": [2, 4],
+    "planetes_par_systeme": [1, 12]
+  },
+  "deplacement": {
+    "$commentaire": "temps_de_saut = (distance / (vitesse_base * vitesse_de_classe)) * facteur_propulsion + amorcage",
+    "vitesse_base_al_par_s": 0.085,
+    "amorcage_s": 20,
+    "classes": {
+      "eclaireur": 1.0,
+      "croiseur": 0.75,
+      "transport": 0.6,
+      "colonisateur": 0.5
+    },
+    "facteur_propulsion": [1.0, 0.85, 0.7, 0.55, 0.45, 0.35],
+    "portee_par_palier_al": [14, 16, 19, 22, 25, 28]
+  },
+  "releve": {
+    "$commentaire": "Un seul systeme analysable a la fois au depart. L'astronomie ouvre des files supplementaires.",
+    "files_par_palier": [1, 2, 3, 4, 6],
+    "portee_telescope_al": [14, 28, 48, 80, 9999],
+    "niveau_max_a_distance": ["L1", "L1", "L2", "L2", "L2"],
+    "duree_s": { "L1": 0, "L2": 90, "L3": 240, "L4": 420 }
+  },
+  "habitabilite": {
+    "seuil_habitable": 60,
+    "cible_systemes_habitables": 0.09,
+    "chance_seconde_habitable": 0.30
+  }
+}

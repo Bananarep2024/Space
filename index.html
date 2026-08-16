@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carte de saut — generateur de galaxie</title>
+<link rel="stylesheet" href="/src/view/style.css">
+</head>
+<body>
+
+<div class="top">
+  <div class="t1" id="titre">Galaxie</div>
+  <div class="t2" id="sous-titre"></div>
+</div>
+
+<div class="btns">
+  <button id="b-vue">Vue d'ensemble</button>
+  <button id="b-neuf">Nouvelle galaxie</button>
+  <button id="b-depart" class="amb">◎ Depart</button>
+</div>
+
+<div class="prop">
+  <div class="prop-t">Propulsion</div>
+  <div class="prop-b" id="paliers"></div>
+  <div class="prop-i" id="prop-info"></div>
+</div>
+
+<div class="find">
+  <div class="hits" id="hits"></div>
+  <input id="q" placeholder="Chercher un systeme" autocomplete="off" spellcheck="false">
+</div>
+
+<div class="card" id="card">
+  <button class="x" id="close">✕</button>
+  <h2 id="c-nom"></h2>
+  <div class="kind" id="c-kind"></div>
+  <div class="grid" id="c-grid"></div>
+  <div class="sec">Mondes</div>
+  <div class="mondes" id="c-mondes"></div>
+</div>
+
+<script type="module" src="/src/view/main.ts"></script>
+</body>
+</html>

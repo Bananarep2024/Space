@@ -1,0 +1,344 @@
+{
+  "$commentaire": "Catalogue des ressources. abondance et difficulte sont des paliers de 1 a 5. transport: local = ne quitte pas le systeme (masse trop grande), standard = fret classique, dense = valeur/masse tres elevee, immateriel = flux non stockable.",
+  "familles": {
+    "vitaux": "Vitaux — sans eux la colonie meurt",
+    "masse": "Materiaux de masse — abondants, lourds, quasi intransportables",
+    "industriels": "Industriels — produits par raffinage, jamais extraits",
+    "strategiques": "Strategiques — rares, localises, objets de conflit",
+    "exotiques": "Exotiques — ouvrent l'arbre de recherche",
+    "vivant": "Biologiques — matiere premiere de la xenologie",
+    "flux": "Flux — jamais stockes, toujours en tension"
+  },
+  "ressources": [
+    {
+      "id": "eau",
+      "nom": "Eau / glaces",
+      "famille": "vitaux",
+      "etat": "brut",
+      "abondance": 5,
+      "difficulte": 1,
+      "transport": "local",
+      "usages": ["survie", "agriculture", "refroidissement", "propergol"],
+      "note": "Electrolysable en oxygene et hydrogene. Une colonie sans eau locale est sous perfusion permanente."
+    },
+    {
+      "id": "volatils",
+      "nom": "Volatils",
+      "famille": "vitaux",
+      "etat": "brut",
+      "abondance": 4,
+      "difficulte": 2,
+      "transport": "local",
+      "usages": ["atmosphere", "engrais", "polymeres", "carburant chimique"],
+      "note": "Azote, dioxyde de carbone, ammoniac, methane. Ecopes sur les geantes et les lunes glacees."
+    },
+    {
+      "id": "biomasse",
+      "nom": "Biomasse",
+      "famille": "vitaux",
+      "etat": "brut",
+      "abondance": 2,
+      "difficulte": 3,
+      "transport": "local",
+      "usages": ["nourriture", "biopolymeres", "milieux de culture"],
+      "note": "Produite par les fermes, ou recoltee directement sur les mondes vivants."
+    },
+    {
+      "id": "regolithe",
+      "nom": "Regolithe",
+      "famille": "masse",
+      "etat": "brut",
+      "abondance": 5,
+      "difficulte": 1,
+      "transport": "local",
+      "usages": ["beton de fusion", "blindage", "protection anti-radiations"],
+      "note": "Present sur absolument tout corps solide. Sans valeur marchande, indispensable a la construction."
+    },
+    {
+      "id": "fer_nickel",
+      "nom": "Fer-nickel",
+      "famille": "masse",
+      "etat": "brut",
+      "abondance": 5,
+      "difficulte": 1,
+      "transport": "local",
+      "usages": ["structures", "coques", "rails"],
+      "note": "Concentre sur les mondes metalliques et les asteroides de type M."
+    },
+    {
+      "id": "silice",
+      "nom": "Silicates",
+      "famille": "masse",
+      "etat": "brut",
+      "abondance": 5,
+      "difficulte": 1,
+      "transport": "local",
+      "usages": ["verre", "optiques", "photovoltaique", "substrats"],
+      "note": "Base de toute l'electronique et de tous les telescopes."
+    },
+    {
+      "id": "carbone",
+      "nom": "Carbone",
+      "famille": "masse",
+      "etat": "brut",
+      "abondance": 4,
+      "difficulte": 2,
+      "transport": "local",
+      "usages": ["composites", "nanotubes", "cables orbitaux"],
+      "note": "Asteroides carbones, mondes de carbone, craquage du methane."
+    },
+    {
+      "id": "alu_mag",
+      "nom": "Aluminium-magnesium",
+      "famille": "masse",
+      "etat": "brut",
+      "abondance": 4,
+      "difficulte": 3,
+      "transport": "local",
+      "usages": ["structures legeres", "navettes"],
+      "note": "Abondant mais tres energivore a reduire : depend d'un reseau electrique solide."
+    },
+    {
+      "id": "alliages",
+      "nom": "Alliages structurels",
+      "famille": "industriels",
+      "etat": "raffine",
+      "intrants": ["fer_nickel", "carbone"],
+      "transport": "standard",
+      "usages": ["batiments", "chantiers navals"]
+    },
+    {
+      "id": "ceramiques",
+      "nom": "Ceramiques refractaires",
+      "famille": "industriels",
+      "etat": "raffine",
+      "intrants": ["silice", "terres_rares"],
+      "transport": "standard",
+      "usages": ["boucliers thermiques", "chambres de reacteur"]
+    },
+    {
+      "id": "polymeres",
+      "nom": "Polymeres et composites",
+      "famille": "industriels",
+      "etat": "raffine",
+      "intrants": ["carbone", "volatils"],
+      "transport": "standard",
+      "usages": ["habitats", "equipements"]
+    },
+    {
+      "id": "electronique",
+      "nom": "Composants electroniques",
+      "famille": "industriels",
+      "etat": "raffine",
+      "intrants": ["silice", "terres_rares", "platinoides"],
+      "transport": "dense",
+      "usages": ["recherche", "robots", "capteurs", "telescopes"]
+    },
+    {
+      "id": "cellules_propulsion",
+      "nom": "Cellules de propulsion",
+      "famille": "industriels",
+      "etat": "raffine",
+      "intrants": ["helium3", "terres_rares", "kaerium"],
+      "transport": "dense",
+      "usages": ["vaisseaux", "portee de saut"]
+    },
+    {
+      "id": "terres_rares",
+      "nom": "Terres rares",
+      "famille": "strategiques",
+      "etat": "brut",
+      "abondance": 2,
+      "difficulte": 3,
+      "transport": "standard",
+      "usages": ["aimants supraconducteurs", "moteurs", "capteurs"],
+      "note": "Tres localisees : quelques mondes en detiennent l'essentiel d'un secteur."
+    },
+    {
+      "id": "platinoides",
+      "nom": "Platinoides",
+      "famille": "strategiques",
+      "etat": "brut",
+      "abondance": 2,
+      "difficulte": 4,
+      "transport": "dense",
+      "usages": ["catalyseurs", "electrodes", "electronique de pointe"],
+      "note": "Concentres dans les coeurs metalliques exposes et les mondes de fournaise."
+    },
+    {
+      "id": "lithium",
+      "nom": "Lithium et sels rares",
+      "famille": "strategiques",
+      "etat": "brut",
+      "abondance": 2,
+      "difficulte": 3,
+      "transport": "standard",
+      "usages": ["stockage d'energie", "caloporteurs", "production de tritium"]
+    },
+    {
+      "id": "uranium",
+      "nom": "Uranium-thorium",
+      "famille": "strategiques",
+      "etat": "brut",
+      "abondance": 2,
+      "difficulte": 3,
+      "transport": "dense",
+      "usages": ["fission", "chaleur de base", "armement"],
+      "note": "Exploitation risquee : accidents et contamination possibles."
+    },
+    {
+      "id": "deuterium",
+      "nom": "Deuterium",
+      "famille": "strategiques",
+      "etat": "brut",
+      "abondance": 3,
+      "difficulte": 3,
+      "transport": "standard",
+      "usages": ["fusion de premiere generation"],
+      "note": "Partout mais tres dilue : il faut traiter des volumes d'eau enormes."
+    },
+    {
+      "id": "helium3",
+      "nom": "Helium-3",
+      "famille": "strategiques",
+      "etat": "brut",
+      "abondance": 2,
+      "difficulte": 4,
+      "transport": "dense",
+      "usages": ["fusion propre", "propulsion"],
+      "note": "Ecopage en gravite forte sur les geantes gazeuses, ou extraction du regolithe expose."
+    },
+    {
+      "id": "tritium",
+      "nom": "Tritium",
+      "famille": "strategiques",
+      "etat": "raffine",
+      "intrants": ["lithium"],
+      "transport": "dense",
+      "perissable": true,
+      "demi_vie_min": 45,
+      "usages": ["fusion avancee"],
+      "note": "Stock perissable : il decroit en soute. Impossible a thesauriser, il faut l'engager."
+    },
+    {
+      "id": "kaerium",
+      "nom": "Kaerium",
+      "famille": "exotiques",
+      "etat": "brut",
+      "abondance": 1,
+      "difficulte": 5,
+      "transport": "dense",
+      "monnaie": true,
+      "usages": ["monnaie", "catalyseur de recherche", "coeur de propulsion"],
+      "note": "Isotope superlourd stable de l'ilot de stabilite. Seule ressource acceptee comme monnaie parce que tout le monde en a besoin. La depenser, c'est renoncer a de la vitesse et a de la science."
+    },
+    {
+      "id": "antimatiere",
+      "nom": "Antimatiere",
+      "famille": "exotiques",
+      "etat": "brut",
+      "abondance": 1,
+      "difficulte": 5,
+      "transport": "dense",
+      "usages": ["propulsion relativiste", "ouverture de trous de ver", "armement strategique"],
+      "note": "Piegee dans les ceintures magnetiques des geantes, ou produite a perte. Le stockage lui-meme est un risque."
+    },
+    {
+      "id": "metamateriaux",
+      "nom": "Metamateriaux natifs",
+      "famille": "exotiques",
+      "etat": "brut",
+      "abondance": 1,
+      "difficulte": 3,
+      "transport": "dense",
+      "usages": ["furtivite", "optique", "boucliers"]
+    },
+    {
+      "id": "matiere_exotique",
+      "nom": "Matiere exotique",
+      "famille": "exotiques",
+      "etat": "brut",
+      "abondance": 0,
+      "difficulte": 5,
+      "transport": "dense",
+      "usages": ["stabilisation de trous de ver"],
+      "note": "Masse-energie negative. N'existe qu'aupres des anomalies et de certains artefacts."
+    },
+    {
+      "id": "xenomateriaux",
+      "nom": "Xenomateriaux",
+      "famille": "exotiques",
+      "etat": "brut",
+      "abondance": 0,
+      "difficulte": 4,
+      "transport": "dense",
+      "unique_par_monde": true,
+      "usages": ["ouvre une branche de recherche propre a la partie"],
+      "note": "Genere avec son propre nom et ses propres proprietes. Deux parties ne donnent jamais le meme arbre de recherche final."
+    },
+    {
+      "id": "echantillons_bio",
+      "nom": "Echantillons xenobiologiques",
+      "famille": "vivant",
+      "etat": "brut",
+      "abondance": 1,
+      "difficulte": 3,
+      "transport": "dense",
+      "usages": ["recherche", "croisements", "medecine"],
+      "note": "Prelevement risque : contamination, reaction de l'ecosysteme, parfois de l'espece elle-meme."
+    },
+    {
+      "id": "banque_genetique",
+      "nom": "Banque genetique",
+      "famille": "vivant",
+      "etat": "flux",
+      "transport": "immateriel",
+      "usages": ["clonage", "hybridation", "medecine"],
+      "note": "Cumulative et jamais perdue. C'est le capital reel d'un empire xenologue."
+    },
+    {
+      "id": "artefacts",
+      "nom": "Artefacts",
+      "famille": "exotiques",
+      "etat": "brut",
+      "abondance": 0,
+      "difficulte": 4,
+      "transport": "dense",
+      "usages": ["technologies uniques", "nouvelles branches"],
+      "note": "Non produits, non reproductibles. Certains sont des pieges."
+    },
+    {
+      "id": "energie",
+      "nom": "Energie",
+      "famille": "flux",
+      "etat": "flux",
+      "transport": "immateriel",
+      "usages": ["raffinage", "recherche", "extraction"]
+    },
+    {
+      "id": "fret",
+      "nom": "Capacite de fret",
+      "famille": "flux",
+      "etat": "flux",
+      "transport": "immateriel",
+      "usages": ["deplacer les ressources entre mondes et systemes"],
+      "note": "La vraie contrainte logistique de l'empire."
+    },
+    {
+      "id": "science",
+      "nom": "Donnees scientifiques",
+      "famille": "flux",
+      "etat": "flux",
+      "transport": "immateriel",
+      "usages": ["arbre de recherche"]
+    },
+    {
+      "id": "legitimite",
+      "nom": "Legitimite",
+      "famille": "flux",
+      "etat": "flux",
+      "transport": "immateriel",
+      "usages": ["politique", "prevention des revoltes", "diplomatie"]
+    }
+  ]
+}
