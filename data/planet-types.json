@@ -6,214 +6,590 @@
       "nom": "Monde de fournaise",
       "categorie": "tellurique",
       "couleur": "#E2622A",
-      "zones": { "chaude": 26, "temperee": 2, "froide": 0 },
-      "rayon_km": [4000, 12000],
+      "zones": {
+        "chaude": 26,
+        "temperee": 2,
+        "froide": 0
+      },
+      "rayon_km": [
+        4000,
+        12000
+      ],
       "habitabilite": 4,
       "atmosphere": "SO2, tenue",
-      "ressources": { "regolithe": 10, "fer_nickel": 8, "platinoides": 6, "silice": 6, "uranium": 4, "terres_rares": 3 },
-      "dangers": ["chaleur extreme", "eruptions"],
+      "ressources": {
+        "regolithe": 10,
+        "fer_nickel": 8,
+        "platinoides": 6,
+        "silice": 6,
+        "uranium": 4,
+        "terres_rares": 3
+      },
+      "dangers": [
+        "chaleur extreme",
+        "eruptions"
+      ],
       "vie": 0.02,
-      "note": "Volcanisme permanent : les gisements s'y reconstituent lentement."
+      "note": "Volcanisme permanent : les gisements s'y reconstituent lentement.",
+      "rendu": {
+        "palette": [
+          "#160F11",
+          "#3E2C28",
+          "#7A4028",
+          "#FFB250"
+        ],
+        "trait": "fractures"
+      }
     },
     {
       "id": "metallique",
       "nom": "Monde de fer nu",
       "categorie": "tellurique",
       "couleur": "#8E8E99",
-      "zones": { "chaude": 16, "temperee": 8, "froide": 4 },
-      "rayon_km": [2000, 7000],
+      "zones": {
+        "chaude": 16,
+        "temperee": 8,
+        "froide": 4
+      },
+      "rayon_km": [
+        2000,
+        7000
+      ],
       "habitabilite": 10,
       "atmosphere": "aucune",
-      "ressources": { "fer_nickel": 12, "regolithe": 8, "platinoides": 6, "terres_rares": 5, "silice": 3 },
-      "dangers": ["aucune atmosphere", "amplitude thermique"],
+      "ressources": {
+        "fer_nickel": 12,
+        "regolithe": 8,
+        "platinoides": 6,
+        "terres_rares": 5,
+        "silice": 3
+      },
+      "dangers": [
+        "aucune atmosphere",
+        "amplitude thermique"
+      ],
       "vie": 0.0,
-      "note": "Coeur planetaire mis a nu. Faible gravite : port de lancement naturel d'un systeme."
+      "note": "Coeur planetaire mis a nu. Faible gravite : port de lancement naturel d'un systeme.",
+      "rendu": {
+        "palette": [
+          "#26262C",
+          "#3A3A42",
+          "#8E8E98",
+          "#C6C6D2"
+        ],
+        "trait": "crateres"
+      }
     },
     {
       "id": "rocheux",
       "nom": "Monde rocheux sterile",
       "categorie": "tellurique",
       "couleur": "#7A7268",
-      "zones": { "chaude": 14, "temperee": 14, "froide": 10 },
-      "rayon_km": [1500, 9000],
+      "zones": {
+        "chaude": 14,
+        "temperee": 14,
+        "froide": 10
+      },
+      "rayon_km": [
+        1500,
+        9000
+      ],
       "habitabilite": 16,
       "atmosphere": "tenue ou nulle",
-      "ressources": { "regolithe": 12, "silice": 8, "fer_nickel": 7, "alu_mag": 5, "carbone": 3 },
-      "dangers": ["radiations de surface"],
-      "vie": 0.01
+      "ressources": {
+        "regolithe": 12,
+        "silice": 8,
+        "fer_nickel": 7,
+        "alu_mag": 5,
+        "carbone": 3
+      },
+      "dangers": [
+        "radiations de surface"
+      ],
+      "vie": 0.01,
+      "rendu": {
+        "palette": [
+          "#2A2724",
+          "#4A443D",
+          "#7A7268",
+          "#A79C8E"
+        ],
+        "trait": "crateres"
+      }
     },
     {
       "id": "desertique",
       "nom": "Desert",
       "categorie": "tellurique",
       "couleur": "#B4653A",
-      "zones": { "chaude": 12, "temperee": 16, "froide": 2 },
-      "rayon_km": [3500, 10000],
+      "zones": {
+        "chaude": 12,
+        "temperee": 16,
+        "froide": 2
+      },
+      "rayon_km": [
+        3500,
+        10000
+      ],
       "habitabilite": 40,
       "atmosphere": "CO2, tenue",
-      "ressources": { "silice": 10, "regolithe": 8, "terres_rares": 6, "uranium": 5, "eau": 3, "lithium": 4 },
-      "dangers": ["tempetes de poussiere saisonnieres"],
+      "ressources": {
+        "silice": 10,
+        "regolithe": 8,
+        "terres_rares": 6,
+        "uranium": 5,
+        "eau": 3,
+        "lithium": 4
+      },
+      "dangers": [
+        "tempetes de poussiere saisonnieres"
+      ],
       "vie": 0.12,
-      "note": "Les tempetes coupent le solaire plusieurs semaines par an : il faut stocker l'energie avant."
+      "note": "Les tempetes coupent le solaire plusieurs semaines par an : il faut stocker l'energie avant.",
+      "rendu": {
+        "palette": [
+          "#4A2A1C",
+          "#8A4A2A",
+          "#C88A56",
+          "#E8C79A"
+        ],
+        "trait": "canyon"
+      }
     },
     {
       "id": "rouille",
       "nom": "Desert de rouille",
       "categorie": "tellurique",
       "couleur": "#A85434",
-      "zones": { "chaude": 6, "temperee": 12, "froide": 6 },
-      "rayon_km": [3000, 9000],
+      "zones": {
+        "chaude": 6,
+        "temperee": 12,
+        "froide": 6
+      },
+      "rayon_km": [
+        3000,
+        9000
+      ],
       "habitabilite": 34,
       "atmosphere": "CO2, tenue",
-      "ressources": { "fer_nickel": 11, "silice": 8, "regolithe": 7, "uranium": 5, "eau": 4, "terres_rares": 4 },
-      "dangers": ["tempetes de poussiere", "sol oxydant"],
-      "vie": 0.08
+      "ressources": {
+        "fer_nickel": 11,
+        "silice": 8,
+        "regolithe": 7,
+        "uranium": 5,
+        "eau": 4,
+        "terres_rares": 4
+      },
+      "dangers": [
+        "tempetes de poussiere",
+        "sol oxydant"
+      ],
+      "vie": 0.08,
+      "rendu": {
+        "palette": [
+          "#3A1C12",
+          "#7A3A22",
+          "#A85434",
+          "#D89A70"
+        ],
+        "trait": "canyon"
+      }
     },
     {
       "id": "serre",
       "nom": "Monde de serre",
       "categorie": "tellurique",
       "couleur": "#C9A44C",
-      "zones": { "chaude": 14, "temperee": 4, "froide": 0 },
-      "rayon_km": [4000, 12000],
+      "zones": {
+        "chaude": 14,
+        "temperee": 4,
+        "froide": 0
+      },
+      "rayon_km": [
+        4000,
+        12000
+      ],
       "habitabilite": 6,
       "atmosphere": "CO2 dense, acide",
-      "ressources": { "volatils": 10, "silice": 7, "carbone": 6, "regolithe": 6, "platinoides": 3 },
-      "dangers": ["pression ecrasante", "pluies acides"],
+      "ressources": {
+        "volatils": 10,
+        "silice": 7,
+        "carbone": 6,
+        "regolithe": 6,
+        "platinoides": 3
+      },
+      "dangers": [
+        "pression ecrasante",
+        "pluies acides"
+      ],
       "vie": 0.03,
-      "note": "Colonisable uniquement en stations aerostatiques dans la haute atmosphere."
+      "note": "Colonisable uniquement en stations aerostatiques dans la haute atmosphere.",
+      "rendu": {
+        "palette": [
+          "#6A5220",
+          "#A88438",
+          "#C9A44C",
+          "#EEDCA2"
+        ],
+        "trait": "voile"
+      }
     },
     {
       "id": "carbone",
       "nom": "Monde de carbone",
       "categorie": "tellurique",
       "couleur": "#3B3B44",
-      "zones": { "chaude": 7, "temperee": 5, "froide": 3 },
-      "rayon_km": [3000, 11000],
+      "zones": {
+        "chaude": 7,
+        "temperee": 5,
+        "froide": 3
+      },
+      "rayon_km": [
+        3000,
+        11000
+      ],
       "habitabilite": 12,
       "atmosphere": "hydrocarbures",
-      "ressources": { "carbone": 14, "metamateriaux": 4, "silice": 5, "regolithe": 6, "volatils": 5 },
-      "dangers": ["atmosphere inflammable"],
+      "ressources": {
+        "carbone": 14,
+        "metamateriaux": 4,
+        "silice": 5,
+        "regolithe": 6,
+        "volatils": 5
+      },
+      "dangers": [
+        "atmosphere inflammable"
+      ],
       "vie": 0.05,
-      "note": "Chimie du carbone dominante : croute de graphite, pluies de goudron, parfois diamant en profondeur."
+      "note": "Chimie du carbone dominante : croute de graphite, pluies de goudron, parfois diamant en profondeur.",
+      "rendu": {
+        "palette": [
+          "#0E0E12",
+          "#22222A",
+          "#3B3B44",
+          "#6E6E7C"
+        ],
+        "trait": "veines"
+      }
     },
     {
       "id": "irradie",
       "nom": "Monde irradie",
       "categorie": "tellurique",
       "couleur": "#6E7F5A",
-      "zones": { "chaude": 8, "temperee": 4, "froide": 2 },
-      "rayon_km": [2500, 9000],
+      "zones": {
+        "chaude": 8,
+        "temperee": 4,
+        "froide": 2
+      },
+      "rayon_km": [
+        2500,
+        9000
+      ],
       "habitabilite": 3,
       "atmosphere": "ionisee",
-      "ressources": { "uranium": 12, "regolithe": 7, "platinoides": 5, "kaerium": 3, "terres_rares": 4 },
-      "dangers": ["radiations mortelles", "electronique instable"],
+      "ressources": {
+        "uranium": 12,
+        "regolithe": 7,
+        "platinoides": 5,
+        "kaerium": 3,
+        "terres_rares": 4
+      },
+      "dangers": [
+        "radiations mortelles",
+        "electronique instable"
+      ],
       "vie": 0.01,
-      "note": "Exploitable seulement par robots : toute presence humaine y est comptee en heures."
+      "note": "Exploitable seulement par robots : toute presence humaine y est comptee en heures.",
+      "rendu": {
+        "palette": [
+          "#22281C",
+          "#3E4A32",
+          "#6E7F5A",
+          "#A8B98A"
+        ],
+        "trait": "crateres"
+      }
     },
     {
       "id": "tempere",
       "nom": "Monde tempere",
       "categorie": "tellurique",
       "couleur": "#5E9E6A",
-      "zones": { "chaude": 0, "temperee": 18, "froide": 0 },
-      "rayon_km": [5000, 14000],
+      "zones": {
+        "chaude": 0,
+        "temperee": 18,
+        "froide": 0
+      },
+      "rayon_km": [
+        5000,
+        14000
+      ],
       "habitabilite": 92,
       "atmosphere": "azote-oxygene, respirable",
-      "ressources": { "eau": 10, "biomasse": 10, "volatils": 7, "silice": 5, "fer_nickel": 4, "carbone": 4 },
+      "ressources": {
+        "eau": 10,
+        "biomasse": 10,
+        "volatils": 7,
+        "silice": 5,
+        "fer_nickel": 4,
+        "carbone": 4
+      },
       "dangers": [],
       "vie": 0.75,
       "habitable": true,
       "rarete": 0.44,
-      "note": "Colonisation a ciel ouvert, sans dome ni combinaison. Sous-sol souvent pauvre."
+      "note": "Colonisation a ciel ouvert, sans dome ni combinaison. Sous-sol souvent pauvre.",
+      "rendu": {
+        "palette": [
+          "#0A2340",
+          "#1E5C7A",
+          "#5E9E6A",
+          "#E6EEF2"
+        ],
+        "trait": "continents"
+      }
     },
     {
       "id": "jungle",
       "nom": "Monde luxuriant",
       "categorie": "tellurique",
       "couleur": "#3F7A46",
-      "zones": { "chaude": 3, "temperee": 12, "froide": 0 },
-      "rayon_km": [5000, 15000],
+      "zones": {
+        "chaude": 3,
+        "temperee": 12,
+        "froide": 0
+      },
+      "rayon_km": [
+        5000,
+        15000
+      ],
       "habitabilite": 78,
       "atmosphere": "riche, respirable avec filtre",
-      "ressources": { "biomasse": 14, "eau": 9, "echantillons_bio": 8, "carbone": 6, "volatils": 5 },
-      "dangers": ["biosphere agressive", "pathogenes inconnus"],
+      "ressources": {
+        "biomasse": 14,
+        "eau": 9,
+        "echantillons_bio": 8,
+        "carbone": 6,
+        "volatils": 5
+      },
+      "dangers": [
+        "biosphere agressive",
+        "pathogenes inconnus"
+      ],
       "vie": 0.95,
       "habitable": true,
       "rarete": 0.38,
-      "note": "Nourriture illimitee et xenobiologie riche, mais la biosphere reprend ce qu'on lui prend."
+      "note": "Nourriture illimitee et xenobiologie riche, mais la biosphere reprend ce qu'on lui prend.",
+      "rendu": {
+        "palette": [
+          "#08221C",
+          "#1A5A46",
+          "#3F7A46",
+          "#8FAE5A"
+        ],
+        "trait": "continents"
+      }
     },
     {
       "id": "ocean",
       "nom": "Monde ocean",
       "categorie": "tellurique",
       "couleur": "#2E86A8",
-      "zones": { "chaude": 2, "temperee": 14, "froide": 2 },
-      "rayon_km": [6000, 17000],
+      "zones": {
+        "chaude": 2,
+        "temperee": 14,
+        "froide": 2
+      },
+      "rayon_km": [
+        6000,
+        17000
+      ],
       "habitabilite": 58,
       "atmosphere": "azote-oxygene",
-      "ressources": { "eau": 14, "deuterium": 9, "biomasse": 8, "lithium": 6, "volatils": 5 },
-      "dangers": ["aucun terrain solide"],
-      "vie": 0.70,
-      "note": "Plateformes flottantes : production alimentaire sans limite, industrie lourde impossible."
+      "ressources": {
+        "eau": 14,
+        "deuterium": 9,
+        "biomasse": 8,
+        "lithium": 6,
+        "volatils": 5
+      },
+      "dangers": [
+        "aucun terrain solide"
+      ],
+      "vie": 0.7,
+      "note": "Plateformes flottantes : production alimentaire sans limite, industrie lourde impossible.",
+      "rendu": {
+        "palette": [
+          "#062438",
+          "#1E6A8C",
+          "#3FA8C0",
+          "#BEC8A0"
+        ],
+        "trait": "oceans"
+      }
     },
     {
       "id": "toundra",
       "nom": "Monde de toundra",
       "categorie": "tellurique",
       "couleur": "#7C8F86",
-      "zones": { "chaude": 0, "temperee": 10, "froide": 8 },
-      "rayon_km": [4000, 13000],
+      "zones": {
+        "chaude": 0,
+        "temperee": 10,
+        "froide": 8
+      },
+      "rayon_km": [
+        4000,
+        13000
+      ],
       "habitabilite": 52,
       "atmosphere": "mince, respirable sous abri",
-      "ressources": { "eau": 10, "fer_nickel": 6, "biomasse": 5, "regolithe": 6, "silice": 5, "uranium": 3 },
-      "dangers": ["froid", "saison sombre"],
-      "vie": 0.35
+      "ressources": {
+        "eau": 10,
+        "fer_nickel": 6,
+        "biomasse": 5,
+        "regolithe": 6,
+        "silice": 5,
+        "uranium": 3
+      },
+      "dangers": [
+        "froid",
+        "saison sombre"
+      ],
+      "vie": 0.35,
+      "rendu": {
+        "palette": [
+          "#1E2A2A",
+          "#46564E",
+          "#7C8F86",
+          "#DCE8EA"
+        ],
+        "trait": "continents"
+      }
     },
     {
       "id": "glace",
       "nom": "Monde de glace fracturee",
       "categorie": "glace",
       "couleur": "#9CC3D8",
-      "zones": { "chaude": 0, "temperee": 3, "froide": 20 },
-      "rayon_km": [3000, 17000],
+      "zones": {
+        "chaude": 0,
+        "temperee": 3,
+        "froide": 20
+      },
+      "rayon_km": [
+        3000,
+        17000
+      ],
       "habitabilite": 18,
       "atmosphere": "traces de methane",
-      "ressources": { "eau": 14, "volatils": 10, "deuterium": 7, "metamateriaux": 3, "fer_nickel": 3 },
-      "dangers": ["froid extreme", "banquise instable"],
-      "vie": 0.20,
-      "note": "Un ocean liquide sous la glace : le milieu le plus propice a une vie insoupconnee."
+      "ressources": {
+        "eau": 14,
+        "volatils": 10,
+        "deuterium": 7,
+        "metamateriaux": 3,
+        "fer_nickel": 3
+      },
+      "dangers": [
+        "froid extreme",
+        "banquise instable"
+      ],
+      "vie": 0.2,
+      "note": "Un ocean liquide sous la glace : le milieu le plus propice a une vie insoupconnee.",
+      "rendu": {
+        "palette": [
+          "#5A7E96",
+          "#9CC3D8",
+          "#D6E8F2",
+          "#F0F8FC"
+        ],
+        "trait": "banquise"
+      }
     },
     {
       "id": "geante_gazeuse",
       "nom": "Geante gazeuse",
       "categorie": "geante",
       "couleur": "#7FA8A0",
-      "zones": { "chaude": 2, "temperee": 4, "froide": 22 },
-      "rayon_km": [45000, 90000],
+      "zones": {
+        "chaude": 2,
+        "temperee": 4,
+        "froide": 22
+      },
+      "rayon_km": [
+        45000,
+        90000
+      ],
       "habitabilite": 2,
       "atmosphere": "hydrogene-helium",
-      "ressources": { "helium3": 14, "volatils": 12, "deuterium": 6, "antimatiere": 2 },
-      "dangers": ["gravite ecrasante", "ceintures de radiations"],
+      "ressources": {
+        "helium3": 14,
+        "volatils": 12,
+        "deuterium": 6,
+        "antimatiere": 2
+      },
+      "dangers": [
+        "gravite ecrasante",
+        "ceintures de radiations"
+      ],
       "vie": 0.03,
-      "lunes": [0, 6],
+      "lunes": [
+        0,
+        6
+      ],
       "anneaux": 0.45,
-      "note": "La pompe a carburant d'un systeme. Ses lunes en font aussi le meilleur verrou militaire."
+      "note": "La pompe a carburant d'un systeme. Ses lunes en font aussi le meilleur verrou militaire.",
+      "rendu": {
+        "palette": [
+          "#26383F",
+          "#4E6F76",
+          "#7FA8A0",
+          "#D3D9C4"
+        ],
+        "trait": "bandes"
+      }
     },
     {
       "id": "geante_de_glaces",
       "nom": "Geante de glaces",
       "categorie": "geante",
       "couleur": "#6C93B8",
-      "zones": { "chaude": 0, "temperee": 2, "froide": 16 },
-      "rayon_km": [20000, 40000],
+      "zones": {
+        "chaude": 0,
+        "temperee": 2,
+        "froide": 16
+      },
+      "rayon_km": [
+        20000,
+        40000
+      ],
       "habitabilite": 2,
       "atmosphere": "hydrogene-methane",
-      "ressources": { "volatils": 13, "eau": 9, "deuterium": 7, "helium3": 5 },
-      "dangers": ["vents supersoniques"],
+      "ressources": {
+        "volatils": 13,
+        "eau": 9,
+        "deuterium": 7,
+        "helium3": 5
+      },
+      "dangers": [
+        "vents supersoniques"
+      ],
       "vie": 0.02,
-      "lunes": [0, 5],
-      "anneaux": 0.30
+      "lunes": [
+        0,
+        5
+      ],
+      "anneaux": 0.3,
+      "rendu": {
+        "palette": [
+          "#1C2E44",
+          "#38566E",
+          "#6C93B8",
+          "#BFD8E8"
+        ],
+        "trait": "bandes"
+      }
     }
   ]
 }

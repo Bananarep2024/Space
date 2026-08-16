@@ -65,6 +65,7 @@ Fait :
 - réseau de saut, nébuleuses, trous de ver, positions de départ équilibrées
 - modèle de déplacement et arbitrage de propulsion
 - visualiseur de la carte avec fiches de systèmes
+- vue système en 3D, avec le relevé détaillé de chaque monde
 
 Reste pour compléter la slice :
 
@@ -72,7 +73,6 @@ Reste pour compléter la slice :
 - flux économiques : énergie, fret, nourriture, science
 - premières technologies et interface de recherche
 - boucle temps réel : horloge de partie, pause, vitesses
-- vue système : les planètes en orbite, dans le style des maquettes
 
 Volontairement hors périmètre pour l'instant : combat, multijoueur, politique,
 croisements d'espèces, clonage. Ils viennent après, sur un socle qui tient.

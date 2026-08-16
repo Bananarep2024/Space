@@ -58,6 +58,11 @@ export interface TypePlanete {
   habitable?: boolean;
   rarete?: number;
   note?: string;
+  /** Indications de rendu : palette et trait dominant de la surface. */
+  rendu: {
+    palette: string[];
+    trait: 'fractures' | 'crateres' | 'canyon' | 'voile' | 'veines' | 'continents' | 'oceans' | 'banquise' | 'bandes';
+  };
 }
 
 export const RESSOURCES = ressourcesJson.ressources as unknown as Ressource[];

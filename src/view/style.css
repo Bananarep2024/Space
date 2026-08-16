@@ -54,13 +54,21 @@ button, input { font-family: inherit; }
 .btns button.amb { color: var(--amber); border-color: rgba(233, 169, 78, .45); }
 .btns button:hover { color: var(--ink); }
 
+.btns button[hidden] { display: none; }
+
+/* Panneau d'inspection, ouvert a la demande — pas un element de jeu. */
 .prop {
   position: fixed; z-index: 6; cursor: default;
   left: max(14px, env(safe-area-inset-left));
   top: calc(max(14px, env(safe-area-inset-top)) + 58px);
-  width: 208px;
+  width: 216px;
 }
+.prop[hidden] { display: none; }
 .prop-t { color: var(--mute); }
+.prop-n {
+  margin-top: 7px; font-size: 8px; letter-spacing: .04em; text-transform: none;
+  color: rgba(118, 136, 155, .8); line-height: 1.6;
+}
 .prop-b { display: flex; gap: 4px; margin-top: 9px; }
 .prop-b button {
   flex: 1; padding: 6px 0; border: 1px solid var(--line); border-radius: 2px;
@@ -111,8 +119,10 @@ button, input { font-family: inherit; }
 .aide.off { opacity: 0; }
 @media (max-width: 759px) { .aide { display: none; } }
 
+/* left/top a zero : la position vient entierement du transform calcule par la
+   projection. Sans eux, l'etiquette part a sa position de flux, hors ecran. */
 .lbl {
-  position: fixed; z-index: 1; transform: translate(-50%, -100%);
+  position: fixed; z-index: 1; left: 0; top: 0; transform: translate(-50%, -100%);
   pointer-events: none; user-select: none; white-space: nowrap; text-align: center;
   font-size: 8.5px; letter-spacing: .22em; text-transform: uppercase;
   transition: opacity .3s;
@@ -155,6 +165,35 @@ button, input { font-family: inherit; }
   margin-top: 16px; font-size: 8.5px; letter-spacing: .3em;
   text-transform: uppercase; color: var(--mute);
 }
+
+/* Accroche : la phrase qui dit pourquoi ce monde compte. */
+.hook {
+  font-size: 10.5px; line-height: 1.6; margin-top: 14px;
+  padding-left: 11px; border-left: 2px solid rgba(233, 169, 78, .5);
+}
+.hook[hidden] { display: none; }
+
+.entrer {
+  margin-top: 18px; width: 100%; padding: 11px; border: 1px solid rgba(233, 169, 78, .45);
+  border-radius: 2px; background: none; color: var(--amber);
+  font-size: 9px; letter-spacing: .24em; text-transform: uppercase; cursor: pointer;
+}
+.entrer[hidden] { display: none; }
+.entrer:hover { background: rgba(233, 169, 78, .08); }
+
+/* Barres de richesse des gisements, dans la fiche d'un monde. */
+.res-l { margin-top: 9px; display: flex; flex-direction: column; gap: 7px; }
+.res-l .r {
+  display: grid; grid-template-columns: 1fr 62px 26px; align-items: center;
+  gap: 9px; font-size: 9.5px;
+}
+.res-l .bar { height: 2px; background: rgba(150, 175, 196, .16); }
+.res-l .bar i { display: block; height: 2px; background: var(--amber); }
+.res-l .v { text-align: right; color: var(--mute); font-variant-numeric: tabular-nums; }
+
+.colo { margin-top: 16px; display: flex; align-items: baseline; gap: 10px; }
+.colo b { font-size: 26px; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.colo span { font-size: 9px; color: var(--mute); letter-spacing: .12em; line-height: 1.5; }
 
 .mondes { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
 .monde { border-left: 2px solid var(--line); padding-left: 10px; }

@@ -48,6 +48,9 @@ Fait :
 - réseau de routes de saut, nébuleuses infranchissables, trous de ver
 - modèle de déplacement complet et arbitrage de propulsion
 - visualiseur web de la carte de saut avec fiches de systèmes
+- **vue système en 3D** : les mondes en volume, surfaces, nuages, halos
+  atmosphériques, anneaux et lunes — entièrement générés par code, sans
+  aucun modèle ni fichier image
 
 À faire : voir [`docs/04-questions-ouvertes.md`](docs/04-questions-ouvertes.md).
 
