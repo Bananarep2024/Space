@@ -77,6 +77,62 @@ barème est une ligne à modifier, pas une refonte.
 - Que se passe-t-il quand un joueur se déconnecte en multijoueur ?
 - Internationalisation dès maintenant, ou français d'abord ?
 
+## Rendu des planètes au portage Unity
+
+Question ouverte : garder notre générateur procédural, ou reprendre un package
+de l'Asset Store ? La réponse ne se joue qu'au moment du portage — un shader
+Unity ne se transporte pas vers Three.js, donc un achat aujourd'hui dormirait
+jusque-là.
+
+### Les cinq critères de sélection
+
+Dans l'ordre d'importance pour ce jeu précis :
+
+1. **Le bruit est-il calculé sur GPU, ou lit-on des textures ?** Avec ~1 400
+   mondes par partie, un pack de N planètes finies fait revenir chaque visage
+   des dizaines de fois. C'est éliminatoire.
+2. **Les paramètres sont-ils exposés au script C# ?** Il faut les piloter depuis
+   `data/planet-types.json`, sinon on perd le lien entre le relevé et l'image.
+3. **Peut-on imposer un germe ?** Sans reproductibilité, plus de sauvegarde
+   légère ni de multijoueur à faible bande passante.
+4. **Les traits de surface sont-ils adressables ?** Calotte polaire, niveau des
+   mers, lave, bandes atmosphériques, anneaux, nuages.
+5. **URP obligatoire, HDRP optionnel.** HDRP est hors sujet pour une cible
+   multiplateforme.
+
+### Candidats évalués
+
+| Package | Nature | Germe | API C# | Verdict |
+|---|---|---|---|---|
+| **Procedural Planet Generation** (Parallel Cascades, 339842) | Shader Graph + VFX Graph + Render Graph, GPU | oui, plages de randomisation | génération en éditeur et au runtime | **recommandé** |
+| **Procedural Planets** (Imphenzia, 287378 / 95581) | textures générées au runtime, ~100 propriétés | `CreatePlanet(position, seed, blueprint)` et surcharge JSON | la plus complète des quatre | solide alternative |
+| **Space Graphics Toolkit** (4160) | boîte à outils spatiale complète | partiel | oui | surdimensionné ici |
+| **Next-Gen Planets** (163061) | ~20 planètes texturées | non | non | écarté (critère 1) |
+
+### Recommandation
+
+**Procedural Planet Generation** de Parallel Cascades. Il est conçu pour
+exactement notre usage — « space strategy games, solar system maps », des
+planètes non atterrissables vues depuis l'espace — il couvre étoiles, géantes
+gazeuses, anneaux, lunes et mondes telluriques, et il est bâti sur Shader Graph
+et Render Graph, donc sans coût de génération de texture par monde.
+
+**Alternative** : le package d'Imphenzia, si le pilotage par script se révèle
+plus déterminant que la performance. Sa surcharge `CreatePlanet` acceptant une
+chaîne JSON tomberait droit sur notre modèle de données. Réserve connue : sa
+documentation signale que la génération dynamique de matériaux n'est pas
+supportée en WebGL, avec un mécanisme de « bake » comme contournement.
+
+### Ce que ça changerait dans le dépôt
+
+Rien dans `src/core/`. Uniquement la couche vue, plus un bloc `unity` à ajouter
+dans `data/planet-types.json` faisant correspondre nos 15 types et leurs traits
+aux paramètres du package. Aucun de ces packages ne parle nativement notre
+vocabulaire — banquise fracturée, bassin d'impact, champ de dunes, anneau teinté
+par la température — donc une partie de ce lexique serait approchée plutôt que
+rendue à l'identique. C'est le vrai coût de la reprise, et il se mesure au
+moment du portage, pas avant.
+
 ## Dette technique connue
 
 - Les textes de l'interface sont écrits en dur dans `src/view/`. À externaliser
